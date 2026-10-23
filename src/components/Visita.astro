@@ -1,0 +1,288 @@
+---
+import { horariosAgrupados, loja, resumoHorario, srcsetDe, statusLoja } from "../scripts/lib";
+import { icons } from "./icons";
+
+const { visita, endereco } = loja;
+const horarios = horariosAgrupados(loja.horarios);
+const zap = `https://wa.me/${loja.whatsapp}`;
+// Fallback do build; o navegador recalcula junto com o resto da página
+const status = statusLoja(loja.horarios);
+const zapLegivel = loja.whatsapp.replace(/^55(\d{2})(\d{4,5})(\d{4})$/, "($1) $2-$3");
+---
+
+<section class="visita" id="visita" aria-labelledby="visita-titulo">
+  <div class="wrap visita__grade">
+    <div class="visita__texto">
+      {visita.chamada && <p class="visita__chamada">{visita.chamada}</p>}
+      <h2 class="display titulo-secao visita__titulo" id="visita-titulo">{visita.titulo}</h2>
+      <dl class="infos">
+        <div>
+          <dt class="rotulo">{visita.titulo === endereco.rua ? "Bairro" : "Endereço"}</dt>
+          <dd>{visita.titulo !== endereco.rua && <>{endereco.rua}<br /></>}{endereco.bairro}, {endereco.cidade}</dd>
+        </div>
+        <div>
+          <dt class="rotulo">Horário</dt>
+          <dd>
+            {
+              horarios.map((h) => (
+                <span class="infos__horario">
+                  <span>{h.dias}</span> {h.horas}
+                </span>
+              ))
+            }
+          </dd>
+        </div>
+        <div>
+          <dt class="rotulo">Fale com a gente</dt>
+          <dd>
+            <a class="infos__link" href={zap} target="_blank" rel="noopener">{zapLegivel}</a>
+            <a class="infos__link" href={loja.instagram} target="_blank" rel="noopener">{loja.instagramUser}</a>
+          </dd>
+        </div>
+      </dl>
+      <div class="visita__acoes">
+        <a href="#cardapio" class="botao botao--grande">Ver cardápio e pedir <Fragment set:html={icons.cima} /></a>
+        <a href={endereco.mapa} class="botao botao--grande botao--vazado" target="_blank" rel="noopener">
+          Como chegar <Fragment set:html={icons.seta} />
+        </a>
+      </div>
+    </div>
+    <div class="visita__foto">
+      <span class="rotulo status visita__status" data-status data-aberto={String(status.aberto)}><span class="status__longo">{status.texto}</span><span class="status__curto">{status.curto}</span></span>
+      <img src={visita.imagem} srcset={srcsetDe(visita.imagem)} sizes="(max-width: 900px) 100vw, 45vw" alt={`Salão do ${loja.nome}`} loading="lazy" />
+    </div>
+  </div>
+</section>
+
+<footer class="rodape sobre-escuro">
+  <div class="wrap">
+    <div class="rodape__topo">
+      <nav aria-label="Rodapé" class="rodape__colunas">
+        <div>
+          <p class="rotulo">Navegar</p>
+          <a href="#cardapio">Cardápio</a>
+          <a href="#sobre">Sobre</a>
+          <a href="#visita">Onde estamos</a>
+        </div>
+        <div>
+          <p class="rotulo">Contato</p>
+          <a href={zap} target="_blank" rel="noopener">WhatsApp</a>
+          <a href={loja.instagram} target="_blank" rel="noopener">Instagram</a>
+        </div>
+      </nav>
+    </div>
+    <p class="rodape__marca" aria-hidden="true">{loja.nome}</p>
+    <div class="rodape__base rotulo">
+      <span>© {new Date().getFullYear()} {loja.nome}. {loja.descricaoCurta}.</span>
+      <span>{endereco.bairro}, {endereco.cidade.split(",")[0]} ◆ {resumoHorario(loja.horarios)}</span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .visita {
+    --c-texto: var(--c-visita-texto);
+    --c-titulo: var(--c-visita-titulo);
+    background: var(--c-visita-fundo);
+    color: var(--c-texto);
+    padding-block: clamp(72px, 9vw, 120px);
+  }
+
+  .visita__grade {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 3rem clamp(32px, 5vw, 72px);
+    align-items: center;
+  }
+
+  /* Mesmo par do hero: frase falada em cima, endereço gritado embaixo */
+  .visita__chamada {
+    margin: 0 0 0.5rem;
+    font-family: var(--f-display);
+    font-weight: 500;
+    font-size: clamp(1.4rem, 2.4vw, 2rem);
+    letter-spacing: -0.02em;
+    color: var(--c-texto);
+  }
+
+  .visita__titulo {
+    font-size: clamp(2.8rem, 6vw, 5.4rem);
+    text-wrap: balance;
+  }
+
+  .infos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.6rem 2rem;
+    margin: clamp(28px, 4vw, 44px) 0 2rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--c-linha);
+  }
+
+  .infos dt {
+    margin-bottom: 0.5rem;
+  }
+
+  .infos dd {
+    margin: 0;
+    line-height: 1.55;
+  }
+
+  .infos__horario {
+    display: block;
+  }
+
+  .infos__link {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    width: fit-content;
+  }
+
+  .infos__horario span {
+    display: inline-block;
+    min-width: 6.2em;
+    font-weight: 600;
+  }
+
+  .visita__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+  }
+
+  .visita .botao--vazado {
+    background: transparent;
+    color: var(--c-texto);
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c-texto) 55%, transparent);
+  }
+
+  .visita .botao--vazado:hover {
+    background: color-mix(in srgb, var(--c-texto) 10%, transparent);
+  }
+
+  .visita__foto {
+    position: relative;
+  }
+
+  .visita__foto img {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+
+  /* Etiqueta de papel presa na foto com o status ao vivo: responde "dá pra ir agora?" */
+  .visita__status {
+    position: absolute;
+    z-index: 1;
+    top: -14px;
+    left: clamp(16px, 3vw, 28px);
+    padding: 0.75rem 1rem;
+    background: #fffaf2;
+    color: var(--c-tinta);
+    border-radius: 3px;
+    box-shadow: 0 14px 24px -14px rgb(0 0 0 / 0.6);
+    rotate: -3deg;
+    font-size: 0.8rem;
+  }
+
+  /* Bolinha mais escura pra contrastar no papel claro */
+  .visita__status::before {
+    background: #b3261e;
+  }
+
+  .visita__status[data-aberto="true"]::before {
+    background: #2f8a3e;
+  }
+
+  /* ---------- Rodapé ---------- */
+
+  .rodape {
+    --c-texto: var(--c-claro);
+    background: var(--c-escuro);
+    color: var(--c-claro);
+    padding-top: clamp(56px, 7vw, 88px);
+    overflow: hidden;
+  }
+
+  .rodape__topo {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 2.4rem;
+  }
+
+  .rodape__colunas {
+    display: flex;
+    gap: clamp(40px, 8vw, 120px);
+  }
+
+  .rodape__colunas div {
+    display: grid;
+    align-content: start;
+    gap: 0;
+  }
+
+  .rodape__colunas .rotulo {
+    margin: 0 0 0.2rem;
+    opacity: 0.75;
+  }
+
+  .rodape__colunas a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    text-decoration: none;
+  }
+
+  .rodape__colunas a:hover {
+    text-decoration: underline;
+  }
+
+  .rodape__marca {
+    color: var(--c-rodape-marca);
+    margin: clamp(48px, 7vw, 88px) 0 0;
+    font-family: var(--f-display);
+    font-weight: 900;
+    font-stretch: 100%;
+    font-size: clamp(4.5rem, 19.5vw, 19rem);
+    line-height: 0.8;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .rodape__base {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.6rem 2rem;
+    margin-top: clamp(24px, 3vw, 36px);
+    padding-block: 20px calc(20px + env(safe-area-inset-bottom));
+    border-top: 1px solid color-mix(in srgb, var(--c-claro) 30%, transparent);
+    font-size: 0.8rem;
+    letter-spacing: 0;
+    text-transform: none;
+    opacity: 0.9;
+  }
+
+  /* Com a barra do pedido na tela, o rodapé ganha espaço por dentro (sem faixa clara embaixo) */
+  :global(body:has(.barra:not([hidden]))) .rodape__base {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+
+  @media (max-width: 900px) {
+    .visita__grade {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .infos {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

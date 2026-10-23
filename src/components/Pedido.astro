@@ -1,0 +1,2749 @@
+---
+import { loja } from "../scripts/lib";
+import { icons } from "./icons";
+
+const brl = (v: number) => `R$\u00a0${v.toFixed(2).replace(".", ",")}`;
+const zapLegivel = loja.whatsapp.replace(/^55(\d{2})(\d{4,5})(\d{4})$/, "($1) $2-$3");
+---
+
+<!-- Barra fixa do pedido: aparece depois do primeiro item -->
+<div class="barra" data-barra hidden>
+  <button type="button" class="barra__botao" data-abrir-pedido>
+    <span class="barra__qtd" data-barra-qtd>0</span>
+    <span class="barra__rotulo">
+      <span class="barra__aviso" data-barra-aviso aria-hidden="true"></span>
+      <span class="barra__normal">Ver pedido</span>
+      <span class="barra__repetir">Pedir de novo</span>
+      <small class="barra__repetir" data-barra-resumo></small>
+      <small data-so-fechado>Cozinha fechada agora</small>
+      <small data-barra-enviado hidden>Já enviado</small>
+    </span>
+    <span class="barra__total" data-barra-total>R$ 0,00</span>
+  </button>
+</div>
+
+<!-- Painel do item -->
+<dialog class="painel" id="painel-item" aria-labelledby="item-nome">
+  <form class="painel__caixa" method="dialog" data-form-item novalidate>
+    <div class="painel__topo" data-arrastar>
+      <span class="painel__alca" aria-hidden="true"></span>
+      <p class="painel__topo-nome" data-item-topo aria-hidden="true"></p>
+      <button type="button" class="painel__fechar" data-fechar aria-label="Fechar" set:html={icons.fechar} />
+    </div>
+    <div class="painel__corpo" data-item-corpo>
+      <div class="item-painel__foto" data-item-foto hidden><img alt="" sizes="(max-width: 760px) 100vw, 480px" /></div>
+      <h2 class="display item-painel__nome" id="item-nome" data-item-nome tabindex="-1"></h2>
+      <p class="item-painel__desc" data-item-desc></p>
+      <p class="item-painel__preco" data-item-base></p>
+      <div data-item-grupos></div>
+      <label class="campo">
+        <span class="campo__rotulo">Alguma observação? <small>(opcional)</small></span>
+        <textarea name="obs" rows="2" maxlength="140" placeholder="Ex: sem cebola, molho à parte"></textarea>
+      </label>
+    </div>
+    <div class="painel__base painel__base--item">
+      <p class="qtd-limite" data-qtd-limite hidden>O limite aqui é 20 por item. Se precisar de mais, é só chamar a gente no WhatsApp.</p>
+      <div class="qtd" role="group" aria-label="Quantidade">
+        <button type="button" data-qtd="-1" aria-label="Diminuir" set:html={icons.menos} />
+        <output data-item-qtd aria-live="polite">1</output>
+        <button type="button" data-qtd="1" aria-label="Aumentar" set:html={icons.mais} />
+      </div>
+      <button type="submit" class="botao botao--grande painel__acao botao--duplo" data-item-adicionar>
+        <span class="botao__rotulo" data-item-acao>Adicionar</span>
+        <span class="botao__valor" data-item-total></span>
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Painel do pedido: lista, dados e mensagem pronta -->
+<dialog class="painel" id="painel-pedido" aria-labelledby="pedido-titulo">
+  <div class="painel__caixa">
+    <div class="painel__topo painel__topo--titulo" data-arrastar>
+      <span class="painel__alca" aria-hidden="true"></span>
+      <button type="button" class="painel__voltar" data-voltar hidden aria-label="Voltar pro pedido" set:html={icons.voltar} />
+      <h2 class="painel__titulo" id="pedido-titulo" tabindex="-1" data-pedido-foco>
+        <span data-pedido-titulo>Seu pedido</span>
+        <small class="painel__etapa" data-pedido-etapa>1 de 3</small>
+      </h2>
+      <button type="button" class="painel__fechar" data-fechar aria-label="Fechar" set:html={icons.fechar} />
+    </div>
+
+    <!-- Passo 1: itens do pedido -->
+    <div class="painel__passo" data-passo="lista">
+      <div class="painel__corpo">
+        <p class="aviso" data-so-fechado data-aviso-fechado-lista><span data-aviso-fechado-texto></span></p>
+        <p class="aviso" data-aviso-ajuste hidden></p>
+        <!-- Pedido já aberto no WhatsApp: uma pergunta só, com as duas saídas -->
+        <div class="aviso aviso--zap" data-ja-enviado hidden>
+          <p><strong>Mandou esse pedido no WhatsApp?</strong></p>
+          <div class="aviso__acoes">
+            <button type="button" class="botao botao--claro botao--contorno" data-novo-pedido>Já mandei, limpar</button>
+            <a class="botao botao--claro botao--contorno" data-reabrir-zap target="_blank" rel="noopener">Abrir de novo</a>
+          </div>
+        </div>
+        <ul class="sacola" data-lista></ul>
+        <div class="lista-notas" data-lista-notas>
+          <p class="lista-entrega" data-lista-entrega></p>
+          <p class="como-funciona" data-como-funciona hidden>
+            Agora é rapidinho: você escolhe entrega e pagamento, confere a comanda e envia pro nosso WhatsApp. A gente confirma por lá.
+          </p>
+        </div>
+        <div class="vazio" data-vazio hidden>
+          <span class="vazio__icone" set:html={icons.sacola} />
+          <p class="subtitulo">Seu pedido ainda está vazio.</p>
+          <p>O que você escolher no cardápio aparece aqui.</p>
+          <button type="button" class="botao" data-fechar>Ver cardápio</button>
+        </div>
+      </div>
+      <div class="painel__base painel__base--coluna" data-lista-base>
+        <p class="linha-total"><span>Subtotal</span><strong data-subtotal></strong></p>
+        <button type="button" class="botao botao--grande painel__acao" data-ir-dados>Escolher entrega e pagamento</button>
+      </div>
+    </div>
+
+    <!-- Passo 2: dados -->
+    <form class="painel__passo" data-passo="dados" data-form-dados hidden novalidate>
+      <div class="painel__corpo">
+        <fieldset class="grupo grupo--primeiro" aria-describedby="erro-tipo">
+          <legend class="grupo__titulo">Como quer receber?</legend>
+          <div class="escolhas escolhas--lado">
+            {
+              loja.entrega.ativa && (
+                <label class="escolha">
+                  <input type="radio" name="tipo" value="entrega" required />
+                  <span class="escolha__nome">Entrega<small data-entrega-sub>{loja.entrega.tempoMedio}</small></span>
+                </label>
+              )
+            }
+            {
+              loja.retirada.ativa && (
+                <label class="escolha">
+                  <input type="radio" name="tipo" value="retirada" required />
+                  <span class="escolha__nome">Retirar no balcão<small>{loja.retirada.tempoMedio}, sem taxa</small></span>
+                </label>
+              )
+            }
+          </div>
+          <span class="campo__ajuda" data-minimo-info hidden></span>
+          <span class="campo__erro" id="erro-tipo">Só falta dizer se é entrega ou retirada.</span>
+        </fieldset>
+
+        <p class="nome-salvo" data-nome-salvo hidden>
+          Pedido em nome de <strong data-nome-salvo-texto></strong>
+          <button type="button" class="nome-salvo__trocar" data-trocar-nome>trocar</button>
+        </p>
+        <label class="campo campo--nome" data-campo-nome>
+          <span class="campo__rotulo">Seu nome</span>
+          <input name="nome" autocomplete="name" required maxlength="60" aria-describedby="erro-nome" />
+          <span class="campo__erro" id="erro-nome">Qual é o seu nome? Assim a gente sabe de quem é o pedido.</span>
+        </label>
+
+        <div class="entrega-campos" data-entrega-campos hidden>
+          <label class="campo">
+            <span class="campo__rotulo">Bairro</span>
+            <select name="bairro" required aria-describedby="erro-bairro info-bairro">
+              <option value="">Qual é o seu bairro?</option>
+              {
+                loja.entrega.bairros.map((b, i) => (
+                  <option value={i}>
+                    {b.nome}
+                    {typeof b.taxa === "number" ? ` · ${brl(b.taxa)}` : " · taxa a combinar"}
+                  </option>
+                ))
+              }
+            </select>
+            <span class="campo__ajuda" id="info-bairro" data-bairro-info hidden>{loja.bairroCombinar}</span>
+            <span class="campo__erro" id="erro-bairro">Com o bairro a gente calcula a entrega.</span>
+          </label>
+          <label class="campo" data-bairro-outro hidden>
+            <span class="campo__rotulo">Qual bairro?</span>
+            <input name="bairroOutro" autocomplete="address-level3" maxlength="60" aria-describedby="erro-bairro-outro" />
+            <span class="campo__erro" id="erro-bairro-outro">Qual é o bairro? Com ele a gente calcula a taxa.</span>
+          </label>
+          <label class="campo">
+            <span class="campo__rotulo">Rua e número</span>
+            <input name="endereco" autocomplete="street-address" required maxlength="120" aria-describedby="erro-endereco" />
+            <span class="campo__erro" id="erro-endereco">Só falta o endereço de entrega.</span>
+          </label>
+          <label class="campo">
+            <span class="campo__rotulo">Complemento ou referência <small>(opcional)</small></span>
+            <input name="complemento" maxlength="80" placeholder="Ex: ap 12, portão azul" />
+          </label>
+        </div>
+
+        <fieldset class="grupo" aria-describedby="erro-pagamento info-pagamento">
+          <legend class="grupo__titulo">Pagamento</legend>
+          <div class="escolhas escolhas--lado">
+            {
+              loja.pagamentos.map((p) => (
+                <label class="escolha">
+                  <input type="radio" name="pagamento" value={p} required />
+                  <span class="escolha__nome">{p}</span>
+                </label>
+              ))
+            }
+          </div>
+          <span class="campo__ajuda" id="info-pagamento" data-pagamento-info hidden></span>
+          <span class="campo__erro" id="erro-pagamento">Só falta a forma de pagamento.</span>
+        </fieldset>
+
+        <label class="campo" data-troco hidden>
+          <span class="campo__rotulo">Troco pra quanto? <small>(opcional)</small></span>
+          <input name="troco" inputmode="decimal" maxlength="14" placeholder="Ex: 100" aria-describedby="erro-troco" />
+          <span class="campo__ajuda" data-troco-info hidden></span>
+          <span class="campo__erro" id="erro-troco" data-erro-troco></span>
+        </label>
+
+        <label class="campo">
+          <span class="campo__rotulo">Observação do pedido <small>(opcional)</small></span>
+          <textarea name="obsGeral" rows="2" maxlength="200"></textarea>
+        </label>
+      </div>
+      <div class="painel__base painel__base--coluna">
+        <button type="submit" class="botao botao--grande painel__acao botao--duplo" data-conferir>
+          <span class="botao__rotulo">Conferir pedido</span>
+          <span class="botao__valor" data-enviar-total></span>
+        </button>
+      </div>
+    </form>
+
+    <!-- Passo 3: a comanda inteira, à vista, antes de enviar -->
+    <div class="painel__passo" data-passo="conferir" hidden>
+      <div class="painel__corpo">
+        <p class="conferir__intro">É assim que o pedido chega pra cozinha no WhatsApp. Se quiser mudar alguma coisa, é só voltar.</p>
+        <div class="comanda__papel comanda__papel--cheia" data-comanda></div>
+        <p class="conferir__depois">
+          <span data-so-aberto>Depois de enviar, a gente confirma por lá{loja.tempoResposta && `, em ${loja.tempoResposta}`}.</span>
+          <span data-so-fechado>Depois de enviar, a gente confirma por lá quando abrir (<span data-quando-abre></span>).</span>{" "}
+          Nada é cobrado antes da confirmação.
+        </p>
+      </div>
+      <div class="painel__base painel__base--coluna">
+        <button type="button" class="botao botao--grande botao--zap painel__acao botao--duplo" data-enviar>
+          <span class="botao__rotulo"><Fragment set:html={icons.whatsapp} /> Enviar no WhatsApp</span>
+          <span class="botao__valor" data-enviar-total-final></span>
+        </button>
+        <p class="nota" data-so-fechado data-nota-fechado></p>
+      </div>
+    </div>
+
+    <!-- Passo 4: mensagem pronta -->
+    <div class="painel__passo" data-passo="enviado" hidden>
+      <div class="painel__corpo enviado">
+        <span class="enviado__icone" set:html={icons.whatsapp} />
+        <p class="display enviado__titulo">Agora é só enviar.</p>
+        <p>O WhatsApp abriu com o seu pedido já escrito. Assim que você enviar a mensagem, a gente confirma.</p>
+        {loja.tempoResposta && <p class="enviado__prazo" data-so-aberto>A gente costuma responder em {loja.tempoResposta}.</p>}
+        <p class="enviado__prazo" data-so-fechado>A gente responde quando abrir: <span data-quando-abre></span>.</p>
+        <p class="enviado__dica">
+          Se o WhatsApp não abriu, o botão abaixo tenta de novo. Sem WhatsApp nesse aparelho? Você pode
+          <button type="button" class="enviado__copiar" data-copiar>copiar o pedido</button> e enviar pro <strong class="enviado__numero">{zapLegivel}</strong> de onde preferir.
+        </p>
+      </div>
+      <div class="painel__base painel__base--coluna">
+        <a class="botao botao--grande botao--zap painel__acao" data-reabrir-zap target="_blank" rel="noopener">
+          <Fragment set:html={icons.whatsapp} /> Abrir no WhatsApp de novo
+        </a>
+        <button type="button" class="botao botao--claro botao--contorno painel__acao" data-novo-pedido>
+          Já mandei, começar outro pedido
+        </button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<p class="sr-only" aria-live="polite" data-anuncio></p>
+
+<script>
+  import { carregarCardapio, formatarPreco, loja, precoCurto, srcsetDe, statusLoja, type Grupo, type Item } from "../scripts/lib";
+
+  type ItemCat = Item & { categoriaId: string };
+
+  interface Linha {
+    chave: string;
+    itemId: string;
+    nome: string;
+    qtd: number;
+    unitario: number;
+    detalhes: string[]; // "Tamanho: Grande"
+    obs: string;
+    escolhas?: Record<string, number[]>; // índices marcados por grupo
+    removendo?: number; // timer do "Desfazer"; linha some quando ele termina
+  }
+
+  const QTD_MAX = 20; // por linha
+  const QTD_TOTAL = 50; // no pedido inteiro; acima disso é encomenda, combina no WhatsApp
+  const CHAVE = `pedido:${loja.nome}:v1`;
+  const CHAVE_DADOS = `pedido:${loja.nome}:dados`;
+  const CHAVE_ENVIO = `pedido:${loja.nome}:envio`;
+  const CHAVE_ULTIMO = `pedido:${loja.nome}:ultimo`;
+  const ULTIMO_DIAS = 30;
+
+  const categorias = carregarCardapio();
+  const itens = new Map<string, ItemCat>();
+  categorias.forEach((c) => c.itens.forEach((i) => itens.set(i.id, { ...i, categoriaId: c.id })));
+
+  const ler = <T,>(k: string, padrao: T): T => {
+    try {
+      const v = localStorage.getItem(k);
+      return v ? (JSON.parse(v) as T) : padrao;
+    } catch {
+      return padrao;
+    }
+  };
+  const gravar = (k: string, v: unknown) => {
+    try {
+      localStorage.setItem(k, JSON.stringify(v));
+    } catch {}
+  };
+  const apagar = (k: string) => {
+    try {
+      localStorage.removeItem(k);
+    } catch {}
+  };
+
+  const $ = <T extends Element = HTMLElement>(sel: string, raiz: ParentNode = document) => raiz.querySelector(sel) as T;
+  const $$ = <T extends Element = HTMLElement>(sel: string, raiz: ParentNode = document) =>
+    Array.from(raiz.querySelectorAll(sel)) as T[];
+
+  const anunciar = (t: string) => {
+    const el = $("[data-anuncio]");
+    el.textContent = "";
+    requestAnimationFrame(() => (el.textContent = t));
+  };
+
+  // Texto digitado entra limpo na mensagem: * _ ~ ` virariam negrito/itálico no WhatsApp
+  const limpo = (t: string) => t.replace(/[*_~`]/g, "").trim();
+
+  const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+
+  // ---------- Preço: regra única usada no painel, na sacola salva e na mensagem ----------
+
+  const grupoMeio = (item: ItemCat): Grupo | null => {
+    if (!item.meioAMeio) return null;
+    const outros = categorias
+      .find((c) => c.id === item.categoriaId)!
+      .itens.filter((i) => i.id !== item.id && i.meioAMeio && !i.indisponivel);
+    return {
+      id: "meio",
+      nome: "Meio a meio?",
+      tipo: "unico",
+      obrigatorio: false,
+      opcoes: [{ nome: `Inteira de ${item.nome}`, preco: 0 }, ...outros.map((o) => ({ nome: o.nome, preco: o.preco }))],
+    };
+  };
+
+  // Obrigatórios primeiro, com o meio a meio logo depois do primeiro (o tamanho), opcionais no fim
+  const gruposDe = (item: ItemCat): Grupo[] => {
+    const meio = grupoMeio(item);
+    const [primeiro, ...obrig] = item.grupos.filter((g) => g.obrigatorio);
+    const opc = item.grupos.filter((g) => !g.obrigatorio);
+    return [...(primeiro ? [primeiro] : []), ...(meio ? [meio] : []), ...obrig, ...opc];
+  };
+
+  const calcularDe = (item: ItemCat, escolhas: Record<string, number[]>) => {
+    let base = item.preco;
+    let nome = item.nome;
+    const detalhes: string[] = [];
+    const faltando: string[] = [];
+    let adicionais = 0;
+    for (const g of gruposDe(item)) {
+      const idxs = (escolhas[g.id] ?? []).filter((i) => g.opcoes[i]);
+      if (g.id === "meio") {
+        const idx = idxs[0] ?? 0;
+        if (idx > 0) {
+          const outro = g.opcoes[idx];
+          base = Math.max(base, outro.preco);
+          nome = `${item.nome} / ${outro.nome}`;
+          detalhes.push(`Meio a meio: metade ${item.nome}, metade ${outro.nome}`);
+        }
+        continue;
+      }
+      const escolhidos = idxs.map((i) => g.opcoes[i]);
+      if (g.obrigatorio && escolhidos.length === 0) faltando.push(g.id);
+      if (escolhidos.length) {
+        adicionais += escolhidos.reduce((s, o) => s + o.preco, 0);
+        const visiveis = escolhidos.filter((o) => !o.silencioso);
+        if (visiveis.length) detalhes.push(`${g.nome}: ${visiveis.map((o) => o.nome).join(", ")}`);
+      }
+    }
+    return { unitario: base + adicionais, nome, detalhes, faltando };
+  };
+
+  // Linhas salvas antes de existir "escolhas": reconstrói pelo texto
+  const escolhasDoTexto = (item: ItemCat, l: Linha): Record<string, number[]> => {
+    const r: Record<string, number[]> = {};
+    for (const g of gruposDe(item)) {
+      if (g.id === "meio") {
+        const metade = l.nome.split(" / ")[1];
+        const idx = metade ? g.opcoes.findIndex((o) => o.nome === metade) : 0;
+        r.meio = [Math.max(0, idx)];
+        continue;
+      }
+      const det = l.detalhes.find((d) => d.startsWith(`${g.nome}: `));
+      if (!det) {
+        const mudo = g.opcoes.findIndex((o) => o.silencioso);
+        if (mudo >= 0) r[g.id] = [mudo];
+        continue;
+      }
+      const nomes = det.slice(g.nome.length + 2).split(", ");
+      r[g.id] = g.opcoes.map((o, i) => (nomes.includes(o.nome) ? i : -1)).filter((i) => i >= 0);
+    }
+    return r;
+  };
+
+  const chaveDe = (itemId: string, nome: string, detalhes: string[], obs: string) =>
+    JSON.stringify([itemId, nome, detalhes, obs]);
+
+  // ---------- Pedido salvo: confere com o cardápio atual ----------
+
+  // Confere linhas guardadas com o cardápio de hoje: item que saiu, opção que mudou, preço novo
+  const validar = (lista: Linha[]) => {
+    const linhas: Linha[] = [];
+    const avisos: string[] = [];
+    for (const l of lista) {
+      const item = itens.get(l.itemId);
+      if (!item || item.indisponivel) {
+        avisos.push(`${l.nome} saiu do cardápio e foi tirado do pedido.`);
+        continue;
+      }
+      const escolhas = l.escolhas ?? escolhasDoTexto(item, l);
+      const r = calcularDe(item, escolhas);
+      if (r.faltando.length) {
+        avisos.push(`As opções de ${l.nome} mudaram, então ele precisa entrar de novo pelo cardápio.`);
+        continue;
+      }
+      if (Math.abs(r.unitario - l.unitario) > 0.001) avisos.push(`O preço de ${r.nome} foi atualizado.`);
+      const { removendo, ...resto } = l;
+      linhas.push({
+        ...resto,
+        nome: r.nome,
+        detalhes: r.detalhes,
+        unitario: r.unitario,
+        escolhas,
+        qtd: Math.min(QTD_MAX, l.qtd),
+        chave: chaveDe(l.itemId, r.nome, r.detalhes, l.obs),
+      });
+    }
+    return { linhas, avisos };
+  };
+
+  let mudouEmOutraAba = false;
+  const inicial = validar(ler<Linha[]>(CHAVE, []));
+  let sacola: Linha[] = inicial.linhas;
+  const ajustes: string[] = inicial.avisos;
+  if (ajustes.length) gravar(CHAVE, sacola);
+
+  // Último pedido mandado ("Já mandei"), pra repetir na próxima visita
+  const ultimoPedido = () => {
+    const u = ler<{ linhas: Linha[]; em: number } | null>(CHAVE_ULTIMO, null);
+    if (!u || Date.now() - u.em > ULTIMO_DIAS * 864e5) return null;
+    const v = validar(u.linhas);
+    return v.linhas.length ? v : null;
+  };
+
+  // Linhas tiradas ficam na lista por alguns segundos com "Desfazer", mas já não contam
+  const ativas = () => sacola.filter((l) => l.removendo === undefined);
+  const totalSacola = () => ativas().reduce((s, l) => s + l.unitario * l.qtd, 0);
+  const qtdSacola = () => ativas().reduce((s, l) => s + l.qtd, 0);
+  const assinatura = () => JSON.stringify(ativas().map((l) => [l.chave, l.qtd]));
+
+  // ---------- Status aberto/fechado ----------
+
+  let status = statusLoja(loja.horarios);
+  const bloqueado = () => !status.aberto && !loja.aceitarPedidoFechado;
+
+  const atualizarStatus = () => {
+    status = statusLoja(loja.horarios);
+    document.documentElement.dataset.aberto = String(status.aberto);
+    $$("[data-status]").forEach((el) => {
+      $(".status__longo", el).textContent = status.texto;
+      $(".status__curto", el).textContent = status.curto;
+      el.dataset.aberto = String(status.aberto);
+    });
+    $$("[data-aviso-fechado-texto]").forEach(
+      (el) =>
+        (el.textContent = loja.aceitarPedidoFechado
+          ? `${status.texto}. Você já pode enviar o pedido, a gente responde assim que abrir.`
+          : `${status.texto}. Você já pode montar o pedido e enviar quando a gente abrir.`),
+    );
+    // "abre hoje às 11h30", pra frases de cozinha fechada
+    const quando = status.texto.split(" · ")[1] ?? status.texto.toLowerCase();
+    $$("[data-quando-abre]").forEach((el) => (el.textContent = quando));
+    // Na base do envio, uma linha só: o aviso completo já aparece no topo da lista
+    const nota = document.querySelector("[data-nota-fechado]");
+    if (nota)
+      nota.textContent = loja.aceitarPedidoFechado
+        ? `${status.texto}. Pode enviar, a gente confirma quando abrir.`
+        : `${status.texto}. Aí é só enviar.`;
+    const enviar = document.querySelector<HTMLButtonElement>("[data-enviar]");
+    if (enviar) enviar.disabled = bloqueado();
+  };
+  atualizarStatus();
+  setInterval(atualizarStatus, 60_000);
+
+  // ---------- Painéis (dialog) ----------
+
+  const abrir = (d: HTMLDialogElement) => {
+    if (!d.open) d.showModal();
+    document.body.classList.add("travado");
+  };
+  const fechar = (d: HTMLDialogElement) => {
+    if (!d.open || d.classList.contains("saindo")) return;
+    d.classList.add("saindo");
+    // Fecha primeiro e só depois tira a classe; na ordem contrária o painel
+    // volta a subir por um instante antes de sumir.
+    const fim = () => {
+      d.close();
+      d.classList.remove("saindo");
+      d.style.removeProperty("--arraste");
+    };
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) fim();
+    else setTimeout(fim, 300);
+  };
+
+  $$<HTMLDialogElement>("dialog.painel").forEach((d) => {
+    d.addEventListener("close", () => {
+      if (!$$<HTMLDialogElement>("dialog.painel").some((x) => x.open)) document.body.classList.remove("travado");
+    });
+    d.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      fechar(d);
+    });
+    d.addEventListener("click", (e) => {
+      if (e.target === d) fechar(d);
+    });
+    $$("[data-fechar]", d).forEach((b) => b.addEventListener("click", () => fechar(d)));
+
+    // Arrastar o topo pra baixo fecha (só no celular, onde o painel sobe de baixo)
+    const topo = $("[data-arrastar]", d);
+    let inicio: number | null = null;
+    topo.addEventListener("pointerdown", (e) => {
+      if (!matchMedia("(max-width: 760px)").matches) return;
+      if ((e.target as HTMLElement).closest("button")) return;
+      inicio = e.clientY;
+      topo.setPointerCapture(e.pointerId);
+      d.classList.add("arrastando");
+    });
+    topo.addEventListener("pointermove", (e) => {
+      if (inicio === null) return;
+      d.style.setProperty("--arraste", `${Math.max(0, e.clientY - inicio)}px`);
+    });
+    const soltar = (e: PointerEvent) => {
+      if (inicio === null) return;
+      const dy = e.clientY - inicio;
+      inicio = null;
+      d.classList.remove("arrastando");
+      if (dy > 90) fechar(d);
+      else d.style.removeProperty("--arraste");
+    };
+    topo.addEventListener("pointerup", soltar);
+    topo.addEventListener("pointercancel", soltar);
+  });
+
+  // Contador só aparece perto do limite de caracteres
+  $$<HTMLTextAreaElement>("textarea[maxlength]").forEach((ta) => {
+    const cont = document.createElement("span");
+    cont.className = "campo__contador";
+    cont.hidden = true;
+    ta.after(cont);
+    const atualizar = () => {
+      const max = ta.maxLength;
+      cont.hidden = ta.value.length < max * 0.75;
+      cont.textContent = `${ta.value.length}/${max}`;
+    };
+    ta.addEventListener("input", atualizar);
+    ta.form?.addEventListener("reset", () => setTimeout(atualizar));
+  });
+
+  // Erro acessível: marca, foca o primeiro e anuncia quantos faltam
+  const mostrarErros = (caixas: HTMLElement[]) => {
+    caixas.forEach((c) => {
+      c.classList.add("com-erro");
+      $$<HTMLInputElement>("input, select, textarea", c).forEach((i) => i.setAttribute("aria-invalid", "true"));
+    });
+    const primeira = caixas[0];
+    const alvo = $<HTMLElement>("input:not([disabled]), select, textarea", primeira);
+    primeira.scrollIntoView({ behavior: "smooth", block: "center" });
+    alvo?.focus({ preventScroll: true });
+    anunciar(caixas.length === 1 ? "Falta 1 informação." : `Faltam ${caixas.length} informações.`);
+  };
+  const limparErro = (c: Element | null) => {
+    if (!c) return;
+    c.classList.remove("com-erro");
+    $$("[aria-invalid]", c).forEach((i) => i.removeAttribute("aria-invalid"));
+  };
+
+  // ---------- Painel do item ----------
+
+  const painelItem = $<HTMLDialogElement>("#painel-item");
+  const formItem = $<HTMLFormElement>("[data-form-item]");
+  const corpoItem = $("[data-item-corpo]");
+  let atual: ItemCat | null = null;
+  let editando: number | null = null;
+  let qtd = 1;
+
+  const htmlGrupo = (g: Grupo, base: number) => {
+    const ehMeio = g.id === "meio";
+    const tipo = g.tipo === "unico" ? "radio" : "checkbox";
+    const temPadrao = typeof g.padrao === "number";
+    // Grupo com padrão já vem marcado: não precisa de selo. Obrigatório sem padrão pede "Escolha 1".
+    const selo = temPadrao ? "" : g.obrigatorio ? (g.tipo === "unico" ? "Escolha 1" : "Obrigatório") : g.max ? `Até ${g.max}` : "Opcional";
+    const ajuda = ehMeio ? `<p class="grupo__ajuda">Metade de cada sabor. Vale o preço do sabor mais caro.</p>` : "";
+    const opcoes = g.opcoes
+      .map((o, i) => {
+        let extra = "";
+        if (ehMeio) {
+          const dif = Math.max(o.preco, base) - base;
+          extra = i > 0 && dif > 0 ? `+ ${formatarPreco(dif)}` : "";
+        } else if (o.preco > 0) extra = `+ ${formatarPreco(o.preco)}`;
+        return `<label class="escolha">
+          <input type="${tipo}" name="${g.id}" value="${i}" ${(ehMeio && i === 0) || g.padrao === i ? "checked" : ""}>
+          <span class="escolha__nome">${ehMeio && i > 0 ? `Metade ${esc(o.nome)}` : esc(o.nome)}</span>
+          ${extra ? `<span class="escolha__preco">${extra}</span>` : ""}
+        </label>`;
+      })
+      .join("");
+    if (ehMeio)
+      return `<fieldset class="grupo grupo--meio" data-grupo="meio">
+      <legend class="sr-only">Meio a meio</legend>
+      <details class="meio" data-meio>
+        <summary class="meio__abrir">Quer meio a meio?</summary>
+        ${ajuda}
+        <div class="escolhas">${opcoes}</div>
+      </details>
+    </fieldset>`;
+    return `<fieldset class="grupo" data-grupo="${g.id}" aria-describedby="erro-g-${g.id}" ${g.obrigatorio && !temPadrao ? "data-obrigatorio" : ""} ${g.max ? `data-max="${g.max}"` : ""}>
+      <legend class="grupo__titulo">${esc(g.nome)} ${selo ? `<span class="grupo__selo">${selo}</span>` : ""}</legend>
+      ${ajuda}
+      <div class="escolhas">${opcoes}</div>
+      <span class="campo__erro" id="erro-g-${g.id}">Só falta escolher uma opção aqui.</span>
+    </fieldset>`;
+  };
+
+  const TEXTO_LIMITE = `Máximo de ${QTD_MAX} por item. Se precisar de mais, é só chamar a gente no WhatsApp.`;
+  const TEXTO_LIMITE_TOTAL = `O pedido chegou em ${QTD_TOTAL} itens. Se precisar de mais, é só chamar a gente no WhatsApp.`;
+  // Linha do pedido com o mesmo item e as mesmas escolhas (soma nela ao adicionar)
+  const linhaIgual = () => {
+    if (!atual) return null;
+    const { nome, detalhes } = calcularDe(atual, escolhasDoForm());
+    const obs = String(new FormData(formItem).get("obs") ?? "").trim();
+    const chave = chaveDe(atual.id, nome, detalhes, obs);
+    return ativas().find((l) => l.chave === chave && sacola.indexOf(l) !== editando) ?? null;
+  };
+  // Quanto ainda cabe desse item: o menor entre o limite por item (contando a linha igual) e o que sobra no pedido
+  const limites = () => {
+    const ocupado = qtdSacola() - (editando !== null ? sacola[editando].qtd : 0);
+    const naLinha = linhaIgual()?.qtd ?? 0;
+    return { porItem: QTD_MAX - naLinha, noPedido: QTD_TOTAL - ocupado, naLinha };
+  };
+  const limiteItem = () => {
+    const { porItem, noPedido } = limites();
+    return Math.max(0, Math.min(porItem, noPedido));
+  };
+  const textoLimite = () => {
+    const { porItem, noPedido, naLinha } = limites();
+    if (noPedido < porItem) return TEXTO_LIMITE_TOTAL;
+    return naLinha > 0 ? `Já tem ${naLinha} desse no pedido. ${TEXTO_LIMITE}` : TEXTO_LIMITE;
+  };
+
+  const escolhasDoForm = () => {
+    const dados = new FormData(formItem);
+    const r: Record<string, number[]> = {};
+    if (atual) for (const g of gruposDe(atual)) r[g.id] = dados.getAll(g.id).map(Number);
+    return r;
+  };
+
+  const atualizarItem = () => {
+    if (!atual) return;
+    const { unitario, faltando } = calcularDe(atual, escolhasDoForm());
+    // Enquanto falta escolha obrigatória, o botão diz o que falta em vez de parecer pronto
+    const falta = faltando.length ? gruposDe(atual).find((g) => g.id === faltando[0]) : null;
+    $("[data-item-acao]").textContent = falta
+      ? (falta.pedir ?? `Escolher ${falta.nome.toLowerCase()}`)
+      : editando !== null
+        ? "Salvar"
+        : "Adicionar";
+    $("[data-item-adicionar]").classList.toggle("painel__acao--falta", !!falta);
+    $("[data-item-qtd]").textContent = String(qtd);
+    $("[data-item-total]").textContent = formatarPreco(unitario * qtd);
+    const limite = limiteItem();
+    $<HTMLButtonElement>('[data-qtd="1"]', formItem).disabled = qtd >= limite;
+    const aviso = $("[data-qtd-limite]");
+    aviso.hidden = qtd < limite;
+    aviso.textContent = textoLimite();
+    $<HTMLButtonElement>("[data-item-adicionar]").disabled = limite < 1;
+    $<HTMLButtonElement>('[data-qtd="-1"]', formItem).disabled = qtd <= 1;
+    $$<HTMLFieldSetElement>("[data-max]", formItem).forEach((fs) => {
+      const max = Number(fs.dataset.max);
+      const caixas = $$<HTMLInputElement>("input[type=checkbox]", fs);
+      const marcadas = caixas.filter((c) => c.checked).length;
+      caixas.forEach((c) => (c.disabled = !c.checked && marcadas >= max));
+    });
+    $$("[data-grupo].com-erro", formItem).forEach((fs) => {
+      if ($$<HTMLInputElement>("input", fs).some((i) => i.checked)) limparErro(fs);
+    });
+  };
+
+  const abrirItem = (id: string, linha: number | null = null) => {
+    const item = itens.get(id);
+    if (!item || item.indisponivel) return;
+    atual = item;
+    editando = linha;
+    const l = linha !== null ? sacola[linha] : null;
+    qtd = l ? l.qtd : 1;
+    qtd = Math.max(1, Math.min(qtd, limiteItem()));
+    formItem.reset();
+    const foto = $("[data-item-foto]");
+    foto.hidden = !item.foto;
+    if (item.foto) {
+      const img = $<HTMLImageElement>("img", foto);
+      img.srcset = srcsetDe(item.foto) ?? "";
+      img.src = item.foto;
+    }
+    $("[data-item-nome]").textContent = item.nome;
+    $("[data-item-topo]").textContent = item.nome;
+    $("[data-item-desc]").textContent = item.descricao ?? "";
+    // Preço "a partir de": diz o que faz o valor mudar
+    const muda = gruposDe(item).find((g) => g.obrigatorio && g.opcoes.some((o) => o.preco > 0));
+    $("[data-item-base]").innerHTML = muda
+      ? `A partir de ${formatarPreco(item.preco)}<span class="item-painel__nota">O valor muda com ${esc(muda.nome.toLowerCase())}.</span>`
+      : formatarPreco(item.preco);
+    $("[data-item-grupos]").innerHTML = gruposDe(item)
+      .map((g) => htmlGrupo(g, item.preco))
+      .join("");
+    if (l) {
+      for (const [grupo, idxs] of Object.entries(l.escolhas ?? escolhasDoTexto(item, l))) {
+        $$<HTMLInputElement>(`input[name="${grupo}"]`, formItem).forEach((inp) => {
+          inp.checked = idxs.includes(Number(inp.value));
+        });
+      }
+      $<HTMLTextAreaElement>("textarea[name=obs]", formItem).value = l.obs;
+    }
+    // Editando um meio a meio: já abre mostrando a escolha
+    const meio = $<HTMLDetailsElement>("[data-meio]", formItem);
+    if (meio) meio.open = !!formItem.querySelector('input[name="meio"]:checked:not([value="0"])');
+    painelItem.classList.remove("rolado");
+    atualizarItem();
+    abrir(painelItem);
+    corpoItem.scrollTop = 0;
+    // Foco no nome, não no X: leitor de tela começa pelo item
+    $<HTMLElement>("[data-item-nome]").focus({ preventScroll: true });
+  };
+
+  // Ao rolar o item, o topo ganha fundo e o nome, e o X para de cobrir os preços
+  const tituloItem = $("[data-item-nome]");
+  corpoItem.addEventListener(
+    "scroll",
+    () => painelItem.classList.toggle("rolado", corpoItem.scrollTop > tituloItem.offsetTop + tituloItem.offsetHeight - 56),
+    { passive: true },
+  );
+
+  // Foto do painel começa a baixar quando o dedo/mouse chega no item
+  const fotosPedidas = new Set<string>();
+  document.addEventListener(
+    "pointerover",
+    (e) => {
+      const alvo = (e.target as HTMLElement).closest<HTMLElement>("[data-abrir-item]");
+      const foto = alvo && itens.get(alvo.dataset.abrirItem!)?.foto;
+      if (!foto || fotosPedidas.has(foto)) return;
+      fotosPedidas.add(foto);
+      const img = new Image();
+      img.sizes = matchMedia("(max-width: 760px)").matches ? "100vw" : "480px";
+      img.srcset = srcsetDe(foto) ?? "";
+      img.src = foto;
+    },
+    { passive: true },
+  );
+
+  // Item sem nenhuma escolha (espresso, água) entra direto; observação dá pra pôr em "Editar"
+  const adicionarDireto = (item: ItemCat) => {
+    const chave = chaveDe(item.id, item.nome, [], "");
+    const existente = ativas().find((l) => l.chave === chave);
+    if ((existente?.qtd ?? 0) >= QTD_MAX || qtdSacola() >= QTD_TOTAL) return abrirItem(item.id);
+    if (existente) existente.qtd++;
+    else sacola.push({ chave, itemId: item.id, nome: item.nome, qtd: 1, unitario: item.preco, detalhes: [], obs: "", escolhas: {} });
+    salvar();
+    anunciar(`1 ${item.nome} adicionado ao pedido.`);
+    avisarNaBarra(`${item.nome} no pedido`);
+  };
+
+  document.addEventListener("click", (e) => {
+    const alvo = (e.target as HTMLElement).closest<HTMLElement>("[data-abrir-item]");
+    if (!alvo) return;
+    const item = itens.get(alvo.dataset.abrirItem!);
+    if (!item || item.indisponivel) return;
+    if (gruposDe(item).length === 0) adicionarDireto(item);
+    else abrirItem(item.id);
+  });
+
+  formItem.addEventListener("change", atualizarItem);
+  formItem.addEventListener("input", atualizarItem);
+  $$<HTMLButtonElement>("[data-qtd]", formItem).forEach((b) =>
+    b.addEventListener("click", () => {
+      const limite = limiteItem();
+      qtd = Math.min(limite, Math.max(1, qtd + Number(b.dataset.qtd)));
+      atualizarItem();
+      if (qtd === limite) anunciar(textoLimite());
+    }),
+  );
+
+  formItem.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!atual) return;
+    const escolhas = escolhasDoForm();
+    const { unitario, detalhes, nome, faltando } = calcularDe(atual, escolhas);
+    if (faltando.length) {
+      mostrarErros(faltando.map((id) => $(`[data-grupo="${id}"]`, formItem)));
+      return;
+    }
+    if (qtd > limiteItem()) {
+      $("[data-qtd-limite]").hidden = false;
+      anunciar(textoLimite());
+      return;
+    }
+    const obs = String(new FormData(formItem).get("obs") ?? "").trim();
+    const chave = chaveDe(atual.id, nome, detalhes, obs);
+    const nova: Linha = { chave, itemId: atual.id, nome, qtd, unitario, detalhes, obs, escolhas };
+    if (editando !== null) {
+      sacola[editando] = nova;
+      const igual = sacola.findIndex((l, i) => i !== editando && l.chave === chave && l.removendo === undefined);
+      if (igual >= 0) {
+        sacola[igual].qtd += qtd;
+        sacola.splice(editando, 1);
+      }
+      anunciar(`${nome} atualizado.`);
+    } else {
+      const existente = sacola.find((l) => l.chave === chave);
+      // limiteItem() já garante que cabe inteiro
+      if (existente) existente.qtd += qtd;
+      else sacola.push(nova);
+      anunciar(`${qtd} ${nome} adicionado ao pedido.`);
+      avisarNaBarra(`${qtd > 1 ? `${qtd}x ` : ""}${nome} no pedido`);
+    }
+    editando = null;
+    salvar();
+    fechar(painelItem);
+  });
+
+  // ---------- Lista do pedido ----------
+
+  const barra = $("[data-barra]");
+  const painelPedido = $<HTMLDialogElement>("#painel-pedido");
+
+  const salvar = () => {
+    gravar(CHAVE, ativas());
+    renderBarra();
+    renderLista();
+  };
+
+  const renderBarra = () => {
+    const n = qtdSacola();
+    const ultimo = n === 0 ? ultimoPedido() : null;
+    barra.classList.toggle("repetir", !!ultimo);
+    barra.hidden = n === 0 && !ultimo;
+    if (ultimo) {
+      const nomes = ultimo.linhas.map((l) => l.nome);
+      $("[data-barra-resumo]").textContent = nomes.length > 1 ? `${nomes[0]} e mais ${nomes.length - 1}` : nomes[0];
+      $("[data-barra-qtd]").textContent = String(ultimo.linhas.reduce((t, l) => t + l.qtd, 0));
+      $("[data-barra-total]").textContent = formatarPreco(ultimo.linhas.reduce((t, l) => t + l.unitario * l.qtd, 0));
+      $<HTMLButtonElement>(".barra__botao").setAttribute("aria-label", `Pedir o mesmo de novo: ${nomes.join(", ")}`);
+      return;
+    }
+    $<HTMLButtonElement>(".barra__botao").removeAttribute("aria-label");
+    $("[data-barra-enviado]").hidden = !jaEnviado();
+    barra.classList.toggle("enviado", jaEnviado());
+    $("[data-barra-qtd]").textContent = String(n);
+    $("[data-barra-total]").textContent = formatarPreco(totalSacola());
+  };
+
+  const pulsarBarra = () => {
+    barra.classList.remove("pulso");
+    void barra.offsetWidth;
+    barra.classList.add("pulso");
+  };
+
+  // Por 2 segundos a barra diz o que entrou ("Calabresa / Rústica no pedido")
+  let timerAviso = 0;
+  const avisarNaBarra = (texto: string) => {
+    $("[data-barra-aviso]").textContent = texto;
+    barra.classList.add("avisando");
+    pulsarBarra();
+    clearTimeout(timerAviso);
+    timerAviso = window.setTimeout(() => barra.classList.remove("avisando"), 2200);
+  };
+
+  const jaEnviado = () => {
+    const envio = ler<{ url: string; assinatura: string } | null>(CHAVE_ENVIO, null);
+    return !!envio && ativas().length > 0 && envio.assinatura === assinatura();
+  };
+
+  const taxasFixas = loja.entrega.bairros.map((b) => b.taxa).filter((t): t is number => typeof t === "number");
+  const textoEntregaLista = [
+    loja.entrega.ativa && taxasFixas.length && `Entrega a partir de ${formatarPreco(Math.min(...taxasFixas))}, conforme o bairro`,
+    loja.retirada.ativa && "retirada sem taxa",
+  ]
+    .filter(Boolean)
+    .join(" ou ")
+    .concat(".");
+
+  const iconeLixeira = document.querySelector("[data-icone-lixeira]")!.innerHTML;
+
+  const renderLista = () => {
+    const vazia = sacola.length === 0;
+    $("[data-vazio]").hidden = !vazia;
+    $("[data-lista-base]").hidden = ativas().length === 0;
+    $("[data-lista-notas]").hidden = ativas().length === 0;
+
+    const aviso = $("[data-aviso-ajuste]");
+    const textosAviso = [...ajustes, ...(mudouEmOutraAba ? ["O pedido mudou em outra aba. Vale conferir antes de seguir."] : [])];
+    aviso.hidden = textosAviso.length === 0;
+    aviso.textContent = textosAviso.join(" ");
+
+    const envio = ler<{ url: string; assinatura: string } | null>(CHAVE_ENVIO, null);
+    $("[data-ja-enviado]").hidden = !jaEnviado();
+    $("[data-aviso-fechado-lista]").hidden = jaEnviado();
+    if (envio) $$<HTMLAnchorElement>("[data-reabrir-zap]").forEach((a) => (a.href = envio.url));
+
+    $("[data-lista]").innerHTML = sacola
+      .map((l, i) =>
+        `<li class="sacola__linha${l.removendo !== undefined ? " sacola__linha--removida" : ""}">
+          ${
+            l.removendo !== undefined
+              ? `<div class="sacola__removida">
+            <p>${esc(l.nome)} saiu do pedido.</p>
+            <button type="button" class="sacola__desfazer" data-desfazer="${i}">Desfazer</button>
+          </div>`
+              : ""
+          }
+          <div class="sacola__info">
+            <p class="sacola__nome">${esc(l.nome)}</p>
+            ${l.detalhes.map((d) => `<p class="sacola__det">${esc(d)}</p>`).join("")}
+            ${l.obs ? `<p class="sacola__det">Obs: ${esc(l.obs)}</p>` : ""}
+          </div>
+          <p class="sacola__preco">${formatarPreco(l.unitario * l.qtd)}</p>
+          <div class="sacola__acoes">
+            <div class="qtd qtd--pequeno" role="group" aria-label="Quantidade de ${esc(l.nome)}">
+              <button type="button" data-linha="${i}" data-delta="-1" aria-label="${l.qtd === 1 ? `Tirar ${esc(l.nome)}` : "Diminuir"}">
+                ${l.qtd === 1 ? iconeLixeira : "−"}
+              </button>
+              <output>${l.qtd}</output>
+              <button type="button" data-linha="${i}" data-delta="1" aria-label="Aumentar" ${l.qtd >= QTD_MAX || qtdSacola() >= QTD_TOTAL ? "disabled" : ""}>+</button>
+            </div>
+            <button type="button" class="sacola__editar" data-editar="${i}" aria-label="Editar ${esc(l.nome)}">Editar</button>
+          </div>
+        </li>`,
+      )
+      .join("");
+    $("[data-subtotal]").textContent = formatarPreco(totalSacola());
+    const falta = faltaMinimo();
+    $("[data-lista-entrega]").textContent =
+      falta > 0 && loja.entrega.ativa
+        ? `Faltam ${formatarPreco(falta)} pro pedido mínimo de entrega (${formatarPreco(loja.pedidoMinimo)}).${loja.retirada.ativa ? " Retirada não tem mínimo." : ""}`
+        : textoEntregaLista;
+    $("[data-lista-entrega]").classList.toggle("lista-entrega--falta", falta > 0 && loja.entrega.ativa);
+    // Conteúdo da linha removida fica só de "molde" pra altura não pular
+    $$(".sacola__linha--removida > :not(.sacola__removida)").forEach((el) => {
+      el.setAttribute("aria-hidden", "true");
+      el.setAttribute("inert", "");
+    });
+    $("[data-como-funciona]").hidden = !!ler<Record<string, string>>(CHAVE_DADOS, {}).nome;
+    renderResumo();
+  };
+
+  $("[data-lista]").addEventListener("click", (e) => {
+    const ed = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-editar]");
+    if (ed) {
+      const i = Number(ed.dataset.editar);
+      abrirItem(sacola[i].itemId, i);
+      return;
+    }
+    const des = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-desfazer]");
+    if (des) {
+      const l = sacola[Number(des.dataset.desfazer)];
+      clearTimeout(l.removendo);
+      delete l.removendo;
+      salvar();
+      anunciar(`${l.nome} voltou pro pedido.`);
+      $<HTMLButtonElement>(`[data-editar="${sacola.indexOf(l)}"]`)?.focus();
+      return;
+    }
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-linha]");
+    if (!b) return;
+    const i = Number(b.dataset.linha);
+    const l = sacola[i];
+    const delta = Number(b.dataset.delta);
+    if (delta > 0 && qtdSacola() >= QTD_TOTAL) return;
+    const nova = Math.min(QTD_MAX, l.qtd + delta);
+    if (nova <= 0) {
+      l.removendo = window.setTimeout(() => {
+        const idx = sacola.indexOf(l);
+        if (idx < 0 || l.removendo === undefined) return;
+        const tinhaFoco = !!document.activeElement?.closest(`[data-desfazer="${idx}"]`);
+        sacola.splice(idx, 1);
+        renderLista();
+        if (tinhaFoco) $<HTMLElement>("[data-pedido-foco]").focus();
+      }, 5000);
+      salvar();
+      anunciar(`${l.nome} saiu do pedido. Dá pra desfazer.`);
+      $<HTMLButtonElement>(`[data-desfazer="${i}"]`)?.focus();
+      return;
+    }
+    l.qtd = nova;
+    salvar();
+  });
+
+  // Fecha de vez as linhas tiradas (ao avançar ou fechar o painel)
+  const confirmarRemovidas = () => {
+    if (!sacola.some((l) => l.removendo !== undefined)) return;
+    sacola.forEach((l) => clearTimeout(l.removendo));
+    sacola = ativas();
+    renderLista();
+  };
+  painelPedido.addEventListener("close", confirmarRemovidas);
+
+  type Passo = "lista" | "dados" | "conferir" | "enviado";
+  const TITULOS: Record<Passo, string> = {
+    lista: "Seu pedido",
+    dados: "Entrega e pagamento",
+    conferir: "Sua comanda",
+    enviado: "Mensagem pronta",
+  };
+  let passoAtual: Passo = "lista";
+  const irPara = (passo: Passo) => {
+    passoAtual = passo;
+    $$("[data-passo]", painelPedido).forEach((p) => (p.hidden = p.dataset.passo !== passo));
+    $("[data-voltar]", painelPedido).hidden = passo !== "dados" && passo !== "conferir";
+    // Celular bem estreito: título curto pra não quebrar em duas linhas
+    const curtos: Partial<Record<Passo, string>> = { dados: "Seus dados", conferir: "Comanda" };
+    $("[data-pedido-titulo]").textContent =
+      (matchMedia("(max-width: 360px)").matches && curtos[passo]) || TITULOS[passo];
+    const etapa = { lista: 1, dados: 2, conferir: 3 }[passo as "lista"];
+    $("[data-pedido-etapa]").textContent = etapa ? `${etapa} de 3` : "";
+    const corpo = $(`[data-passo="${passo}"] .painel__corpo`, painelPedido);
+    if (corpo) corpo.scrollTop = 0;
+  };
+
+  $$("[data-abrir-pedido]").forEach((b) =>
+    b.addEventListener("click", () => {
+      if (barra.classList.contains("repetir") && b.closest(".barra")) {
+        const ultimo = ultimoPedido();
+        if (ultimo) {
+          sacola = ultimo.linhas;
+          ajustes.length = 0;
+          ajustes.push(...ultimo.avisos);
+          salvar();
+          anunciar("Seu último pedido voltou. É só conferir e seguir.");
+        }
+      }
+      irPara("lista");
+      abrir(painelPedido);
+      $<HTMLElement>("[data-pedido-foco]").focus({ preventScroll: true });
+    }),
+  );
+  $("[data-ir-dados]").addEventListener("click", () => {
+    mudouEmOutraAba = false;
+    confirmarRemovidas();
+    mostrarNomeSalvo(inputNome.value.trim().length > 0);
+    irPara("dados");
+    renderResumo();
+  });
+  $("[data-voltar]").addEventListener("click", () => {
+    irPara(passoAtual === "conferir" ? "dados" : "lista");
+    $<HTMLElement>("[data-pedido-foco]").focus({ preventScroll: true });
+  });
+
+  // ---------- Dados e envio ----------
+
+  const formDados = $<HTMLFormElement>("[data-form-dados]");
+  const CAMPOS_SALVOS = ["nome", "tipo", "bairro", "bairroOutro", "endereco", "complemento", "pagamento", "troco", "obsGeral"];
+
+  for (const [k, v] of Object.entries(ler<Record<string, string>>(CHAVE_DADOS, {}))) {
+    const campo = formDados.elements.namedItem(k) as HTMLInputElement | RadioNodeList | null;
+    if (campo && v) campo.value = v;
+  }
+
+  // Quem já pediu antes vê só "Pedido em nome de Ana · trocar"
+  const campoNome = $("[data-campo-nome]");
+  const inputNome = $<HTMLInputElement>("input[name=nome]", formDados);
+  const mostrarNomeSalvo = (sim: boolean) => {
+    $("[data-nome-salvo]").hidden = !sim;
+    campoNome.hidden = sim;
+    if (sim) $("[data-nome-salvo-texto]").textContent = limpo(inputNome.value);
+  };
+  mostrarNomeSalvo(inputNome.value.trim().length > 0);
+  $("[data-trocar-nome]").addEventListener("click", () => {
+    mostrarNomeSalvo(false);
+    inputNome.focus();
+    inputNome.select();
+  });
+
+  // Rascunho salvo enquanto digita: se sair do app e voltar, está tudo lá
+  const salvarRascunho = () => {
+    const d = new FormData(formDados);
+    const dados = Object.fromEntries(CAMPOS_SALVOS.map((k) => [k, String(d.get(k) ?? "")]));
+    // Entrega desmarcada só pelo mínimo continua sendo a escolha da pessoa
+    if (!dados.tipo && entregaPeloMinimo) dados.tipo = "entrega";
+    gravar(CHAVE_DADOS, dados);
+  };
+
+  // "bairro" é o nome que vai pra cozinha: no "Outro bairro" é o que a pessoa digitou
+  const taxaAtual = (): { taxa: number | null; bairro: string; escolhido: boolean; outro: boolean } | null => {
+    const d = new FormData(formDados);
+    if (d.get("tipo") !== "entrega") return null;
+    const idx = d.get("bairro");
+    if (idx === null || idx === "") return { taxa: null, bairro: "", escolhido: false, outro: false };
+    const b = loja.entrega.bairros[Number(idx)];
+    const outro = "outro" in b && !!b.outro;
+    const bairro = outro ? limpo(String(d.get("bairroOutro") ?? "")) : b.nome;
+    return { taxa: b.taxa, bairro, escolhido: true, outro };
+  };
+
+  // Enquanto não dá pra saber a taxa (sem tipo, sem bairro ou bairro "a combinar"), o valor leva "+ entrega"
+  const entregaPendente = () => {
+    const tipo = new FormData(formDados).get("tipo");
+    if (tipo === "retirada" || (!tipo && (!loja.entrega.ativa || faltaMinimo() > 0))) return false;
+    const t = taxaAtual();
+    return !t || !t.bairro || t.taxa === null;
+  };
+
+  const textoTotal = () => {
+    const t = taxaAtual();
+    return formatarPreco(totalSacola() + (t?.taxa ?? 0)) + (entregaPendente() ? " + entrega" : "");
+  };
+
+  // Valor digitado no troco ("R$ 100", "100,00", "1.000") vira número
+  const lerValor = (bruto: string) =>
+    Number(bruto.replace(/[^\d,.]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", "."));
+
+  // Troco tem que cobrir o total (quando a taxa já é conhecida)
+  const erroTroco = () => {
+    const d = new FormData(formDados);
+    const bruto = String(d.get("troco") ?? "").trim();
+    if (d.get("pagamento") !== "Dinheiro" || !bruto) return "";
+    const valor = lerValor(bruto);
+    if (!Number.isFinite(valor) || valor <= 0) return "Só o número já basta, tipo 100.";
+    const total = totalSacola() + (taxaAtual()?.taxa ?? 0);
+    if (valor >= total) return "";
+    return entregaPendente()
+      ? `O valor precisa cobrir pelo menos os produtos (${formatarPreco(total)}), mais a entrega.`
+      : `O valor precisa cobrir o total: ${formatarPreco(total)}.`;
+  };
+
+  // Pedido mínimo vale só pra entrega; retirada fica sempre liberada
+  const faltaMinimo = () => Math.max(0, (loja.pedidoMinimo ?? 0) - totalSacola());
+  // Entrega tirada só por causa do mínimo volta sozinha quando o pedido passa do valor
+  let entregaPeloMinimo = ler<Record<string, string>>(CHAVE_DADOS, {}).tipo === "entrega";
+  const aplicarMinimo = () => {
+    const falta = faltaMinimo();
+    const radio = formDados.querySelector<HTMLInputElement>('input[name=tipo][value="entrega"]');
+    if (!radio) return;
+    const bloqueia = falta > 0;
+    radio.disabled = bloqueia;
+    if (bloqueia && radio.checked) {
+      radio.checked = false;
+      entregaPeloMinimo = true;
+      renderResumo();
+      return;
+    }
+    const algumTipo = !!formDados.querySelector("input[name=tipo]:checked");
+    if (!bloqueia && entregaPeloMinimo && !algumTipo) {
+      radio.checked = true;
+      entregaPeloMinimo = false;
+      renderResumo();
+      return;
+    }
+    $("[data-entrega-sub]").textContent = bloqueia ? `Mínimo R$\u00a0${precoCurto(loja.pedidoMinimo)}` : loja.entrega.tempoMedio;
+    const info = $("[data-minimo-info]");
+    // Quem já escolheu retirada não precisa do aviso de mínimo
+    const retirada = new FormData(formDados).get("tipo") === "retirada";
+    info.hidden = !bloqueia || retirada;
+    info.textContent = bloqueia
+      ? `Faltam ${formatarPreco(falta)} em produtos pra liberar a entrega.${loja.retirada.ativa ? " Retirada não tem mínimo." : ""}`
+      : "";
+  };
+
+  const renderResumo = () => {
+    const d = new FormData(formDados);
+    const entrega = d.get("tipo") === "entrega";
+    $("[data-entrega-campos]").hidden = !entrega;
+    $$<HTMLInputElement | HTMLSelectElement>("[data-entrega-campos] [required]").forEach((c) => (c.required = entrega));
+    const pg = String(d.get("pagamento") ?? "");
+    $("[data-troco]").hidden = pg !== "Dinheiro";
+    const info = (loja.pagamentosInfo as Record<string, string>)[pg];
+    const infoEl = $("[data-pagamento-info]");
+    infoEl.hidden = !info;
+    infoEl.textContent = info ?? "";
+
+    const trocoInfo = $("[data-troco-info]");
+    const trocoValor = lerValor(String(d.get("troco") ?? ""));
+    const totalConhecido = !entregaPendente();
+    const volta = trocoValor - (totalSacola() + (taxaAtual()?.taxa ?? 0));
+    trocoInfo.hidden = !(pg === "Dinheiro" && totalConhecido && trocoValor > 0 && volta >= 0);
+    trocoInfo.textContent = trocoInfo.hidden ? "" : `Volta ${formatarPreco(volta)} de troco.`;
+
+    const t = taxaAtual();
+    $("[data-bairro-info]").hidden = !(t && t.escolhido && t.taxa === null);
+    const campoOutro = $("[data-bairro-outro]");
+    campoOutro.hidden = !t?.outro;
+    $<HTMLInputElement>("input[name=bairroOutro]", formDados).required = !!t?.outro;
+    const rotuloTotal = entregaPendente() ? textoTotal() : `Total ${textoTotal()}`;
+    $("[data-enviar-total]").textContent = rotuloTotal;
+    $("[data-enviar-total-final]").textContent = rotuloTotal;
+    aplicarMinimo();
+    $("[data-comanda]").innerHTML = comandaHtml(montarMensagem(d, true));
+    $<HTMLButtonElement>("[data-enviar]").disabled = bloqueado();
+  };
+
+  formDados.addEventListener("change", (e) => {
+    if ((e.target as HTMLInputElement).name === "tipo") entregaPeloMinimo = false;
+    renderResumo();
+    salvarRascunho();
+  });
+  formDados.addEventListener("input", (e) => {
+    limparErro((e.target as HTMLElement).closest(".campo, .grupo"));
+    salvarRascunho();
+    renderResumo();
+  });
+
+  // Mesma mensagem do WhatsApp, desenhada como comanda: *negrito* e _itálico_ viram HTML
+  const comandaHtml = (msg: string) =>
+    msg
+      .split("\n")
+      .map((linha) => {
+        const h = esc(linha)
+          .replace(/\*([^*]+)\*/g, "<strong>$1</strong>")
+          .replace(/_([^_]+)_/g, "<em>$1</em>")
+          .replace(/\[falta\]/g, '<span class="comanda__falta">a preencher</span>');
+        return h.trim() ? `<p${/^ {3}/.test(linha) ? ' class="comanda__det"' : ""}>${h}</p>` : `<hr />`;
+      })
+      .join("");
+
+  const montarMensagem = (d: FormData, previa = false) => {
+    const campo = (k: string) => limpo(String(d.get(k) ?? "")) || (previa ? "[falta]" : "");
+    const linhas: string[] = [`*Pedido · ${loja.nome}*`, ""];
+    if (!status.aberto) linhas.splice(1, 0, "_Pedido feito fora do horário. Pode responder quando abrir._");
+    for (const l of ativas()) {
+      linhas.push(`*${l.qtd}x ${l.nome}* (${formatarPreco(l.unitario * l.qtd)})`);
+      l.detalhes.forEach((x) => linhas.push(`   ${x}`));
+      if (l.obs) linhas.push(`   Obs: ${limpo(l.obs)}`);
+      linhas.push("");
+    }
+    const sub = totalSacola();
+    const t = taxaAtual();
+    linhas.push(`Subtotal: ${formatarPreco(sub)}`);
+    if (t && t.bairro) linhas.push(`Entrega (${t.bairro}): ${t.taxa === null ? "a combinar" : formatarPreco(t.taxa)}`);
+    linhas.push(`*Total: ${textoTotal()}*`);
+    linhas.push("");
+    linhas.push(`*Nome:* ${campo("nome")}`);
+    const tipo = d.get("tipo");
+    if (t) {
+      const comp = limpo(String(d.get("complemento") ?? ""));
+      linhas.push(`*Entrega:* ${campo("endereco")}${comp ? `, ${comp}` : ""} · ${t.bairro || (previa ? "[falta]" : "")}`);
+    } else if (tipo === "retirada") {
+      linhas.push(`*Retirada no balcão*`);
+    } else if (previa) {
+      linhas.push(`*Entrega ou retirada:* [falta]`);
+    }
+    const pg = campo("pagamento");
+    const troco = lerValor(String(d.get("troco") ?? ""));
+    linhas.push(`*Pagamento:* ${pg}${pg === "Dinheiro" && troco > 0 ? `, troco pra ${formatarPreco(troco)}` : ""}`);
+    const obs = limpo(String(d.get("obsGeral") ?? ""));
+    if (obs) linhas.push(`*Obs:* ${obs}`);
+    // No WhatsApp vai espaço comum (o inquebrável é só pra tela)
+    return linhas.join("\n").replace(/\u00a0/g, " ");
+  };
+
+  formDados.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const erros: HTMLElement[] = [];
+    $$<HTMLInputElement | HTMLSelectElement>("[required]", formDados).forEach((c) => {
+      if (c.closest("[hidden]") || c.checkValidity()) return;
+      const caixa = c.closest<HTMLElement>(".campo, .grupo")!;
+      if (!erros.includes(caixa)) erros.push(caixa);
+    });
+    const errTroco = erroTroco();
+    if (errTroco) {
+      $("[data-erro-troco]").textContent = errTroco;
+      erros.push($("[data-troco]"));
+    }
+    if (erros.includes(campoNome)) mostrarNomeSalvo(false);
+    if (erros.length) {
+      mostrarErros(erros);
+      return;
+    }
+    salvarRascunho();
+    renderResumo();
+    irPara("conferir");
+    $<HTMLElement>("[data-pedido-foco]").focus({ preventScroll: true });
+  });
+
+  $("[data-enviar]").addEventListener("click", () => {
+    if (bloqueado()) return;
+    const d = new FormData(formDados);
+    const url = `https://wa.me/${loja.whatsapp}?text=${encodeURIComponent(montarMensagem(d))}`;
+    // Guarda o envio, mas mantém o pedido: só limpa quando a pessoa confirmar que mandou
+    gravar(CHAVE_ENVIO, { url, assinatura: assinatura() });
+    $$<HTMLAnchorElement>("[data-reabrir-zap]").forEach((a) => (a.href = url));
+    const aba = window.open(url, "_blank");
+    if (aba) aba.opener = null;
+    else location.href = url;
+    irPara("enviado");
+    renderLista();
+    renderBarra();
+  });
+
+  $("[data-copiar]").addEventListener("click", async (e) => {
+    const botao = e.currentTarget as HTMLButtonElement;
+    try {
+      await navigator.clipboard.writeText(montarMensagem(new FormData(formDados)));
+      botao.textContent = "Copiado";
+      anunciar("Pedido copiado.");
+    } catch {
+      botao.textContent = "Não deu pra copiar";
+    }
+    setTimeout(() => (botao.textContent = "copiar o pedido"), 2500);
+  });
+
+  // "Já mandei": no passo final e no aviso da lista
+  $$("[data-novo-pedido]").forEach((b) => b.addEventListener("click", () => {
+    if (ativas().length) gravar(CHAVE_ULTIMO, { linhas: ativas(), em: Date.now() });
+    sacola = [];
+    ajustes.length = 0;
+    apagar(CHAVE_ENVIO);
+    // Mantém nome, endereço e pagamento; limpa só o que é do pedido
+    const d = ler<Record<string, string>>(CHAVE_DADOS, {});
+    gravar(CHAVE_DADOS, { ...d, troco: "", obsGeral: "" });
+    $<HTMLInputElement>("[name=troco]", formDados).value = "";
+    $<HTMLTextAreaElement>("[name=obsGeral]", formDados).value = "";
+    salvar();
+    anunciar("Boa! Agora é com a cozinha.");
+    fechar(painelPedido);
+    avisarNaBarra("Boa! Agora é com a cozinha.");
+  }));
+
+  // ---------- Categorias: destaque da ativa + sombra quando fixa ----------
+
+  const barraCat = $(".categorias");
+  if (barraCat) {
+    const links = $$<HTMLAnchorElement>("[data-cat-link]");
+    const marcar = (id: string) => {
+      links.forEach((a) => {
+        const ativo = a.dataset.catLink === id;
+        if (ativo) a.setAttribute("aria-current", "true");
+        else a.removeAttribute("aria-current");
+        if (ativo) a.closest("ul")!.scrollTo({ left: a.offsetLeft - 16, behavior: "smooth" });
+      });
+    };
+    const obs = new IntersectionObserver(
+      (entradas) => entradas.forEach((en) => en.isIntersecting && marcar((en.target as HTMLElement).dataset.categoria!)),
+      { rootMargin: "-30% 0px -60% 0px" },
+    );
+    $$("[data-categoria]").forEach((s) => obs.observe(s));
+
+    // Dica de rolagem nas categorias: some quando chega no fim da fila
+    const lista = $(".categorias__lista", barraCat);
+    const conferirFim = () =>
+      (barraCat.dataset.fim = String(lista.scrollLeft + lista.clientWidth >= lista.scrollWidth - 4));
+    lista.addEventListener("scroll", conferirFim, { passive: true });
+    addEventListener("resize", conferirFim);
+    conferirFim();
+
+    const sentinela = document.createElement("div");
+    barraCat.before(sentinela);
+    new IntersectionObserver(([en]) => (barraCat.dataset.fixa = String(!en.isIntersecting)), {
+      rootMargin: "-57px 0px 0px 0px",
+    }).observe(sentinela);
+  }
+
+  // Outra aba mexeu no pedido: essa acompanha em vez de sobrescrever depois
+  addEventListener("storage", (e) => {
+    if (e.key !== CHAVE && e.key !== CHAVE_ENVIO) return;
+    if (e.key === CHAVE) {
+      sacola.forEach((l) => clearTimeout(l.removendo));
+      sacola = validar(ler<Linha[]>(CHAVE, [])).linhas;
+      // Quem estava conferindo volta pra lista: a comanda não muda em silêncio
+      if (painelPedido.open && (passoAtual === "dados" || passoAtual === "conferir")) {
+        mudouEmOutraAba = true;
+        irPara("lista");
+        anunciar("O pedido mudou em outra aba. Vale conferir antes de seguir.");
+      }
+    }
+    renderBarra();
+    renderLista();
+  });
+
+  // Item esgotado continua no Tab, mas avisa em vez de não fazer nada
+  document.addEventListener("click", (e) => {
+    const alvo = (e.target as HTMLElement).closest<HTMLElement>('[data-abrir-item][aria-disabled="true"]');
+    if (!alvo) return;
+    const item = itens.get(alvo.dataset.abrirItem!);
+    anunciar(`${item?.nome ?? "Esse item"} esgotou hoje.`);
+    alvo.classList.remove("item--avisado");
+    void alvo.offsetWidth;
+    alvo.classList.add("item--avisado");
+  });
+
+  renderBarra();
+  renderLista();
+</script>
+
+<template data-icone-lixeira><Fragment set:html={icons.lixeira} /></template>
+
+<style is:global>
+  /* ---------- Barra da sacola ---------- */
+
+  .barra {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 40;
+    display: flex;
+    justify-content: center;
+    padding: 0 var(--gutter) calc(14px + env(safe-area-inset-bottom));
+    pointer-events: none;
+    animation: barra-entra 0.5s var(--ease-out);
+  }
+
+  .barra[hidden] {
+    display: none;
+  }
+
+  .barra__botao {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    width: min(100%, 520px);
+    min-height: 58px;
+    padding: 0.5rem 0.6rem 0.5rem 0.6rem;
+    border: 0;
+    border-radius: 8px;
+    background: var(--c-acao);
+    color: var(--c-sobre-acao);
+    transition: transform 0.25s var(--ease-out);
+    --furo: 9px;
+    mask:
+      radial-gradient(circle var(--furo) at 0 50%, transparent 98%, #000) left / 51% 100% no-repeat,
+      radial-gradient(circle var(--furo) at 100% 50%, transparent 98%, #000) right / 51% 100% no-repeat;
+  }
+
+  /* A máscara corta a sombra do botão; a sombra fica no contêiner */
+  .barra {
+    filter: drop-shadow(0 14px 18px rgb(0 0 0 / 0.35));
+  }
+
+  .barra__botao:hover {
+    background: var(--c-acao-hover);
+  }
+
+  .barra__botao:active {
+    transform: scale(0.98);
+  }
+
+  /* Canhoto da comanda: a quantidade é o número impresso no papel, antes do picote */
+  .barra__qtd {
+    display: grid;
+    place-items: center;
+    min-width: 42px;
+    padding-left: 0.5rem;
+    font-family: var(--f-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .barra__rotulo {
+    flex: 1;
+    align-self: stretch;
+    align-content: center;
+    padding-left: 0.9rem;
+    border-left: 2px dashed color-mix(in srgb, var(--c-sobre-acao) 45%, transparent);
+    display: grid;
+    text-align: left;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .barra__rotulo small[hidden] {
+    display: none;
+  }
+
+  .barra__rotulo small {
+    font-size: 0.78rem;
+    font-weight: 500;
+    opacity: 0.92;
+  }
+
+  .barra__total {
+    padding-right: 0.9rem;
+    font-family: var(--f-display);
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+
+  .barra__aviso,
+  .barra__repetir {
+    display: none;
+  }
+
+  /* Pedido vazio + último pedido guardado: a barra oferece repetir */
+  .barra.repetir .barra__repetir {
+    display: block;
+  }
+
+  .barra.repetir .barra__normal,
+  .barra.repetir [data-so-fechado],
+  .barra.repetir [data-barra-enviado] {
+    display: none;
+  }
+
+  .barra.repetir small.barra__repetir {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* "Boa!" depois do "Já mandei": o total do pedido anterior sai pra frase caber */
+  .barra.repetir.avisando .barra__total {
+    display: none;
+  }
+
+  .barra.enviado [data-so-fechado] {
+    display: none;
+  }
+
+  /* Enquanto avisa, o rótulo vira a confirmação do que entrou */
+  .barra.avisando .barra__rotulo > :not(.barra__aviso) {
+    display: none;
+  }
+
+  .barra.avisando .barra__aviso {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    animation: aviso-entra 0.35s var(--ease-out);
+  }
+
+  @keyframes aviso-entra {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+
+  /* Barra na tela: o fim do cardápio ganha espaço pra ela não cobrir o último item */
+  body:has(.barra:not([hidden])) .cardapio {
+    padding-bottom: calc(clamp(72px, 9vw, 120px) + 64px);
+  }
+
+  .barra.pulso .barra__botao {
+    animation: barra-pulso 0.5s var(--ease-out);
+  }
+
+  @keyframes barra-entra {
+    from {
+      transform: translateY(120%);
+    }
+  }
+
+  @keyframes barra-pulso {
+    40% {
+      transform: scale(1.04);
+    }
+  }
+
+  /* ---------- Painel (bottom sheet no celular, gaveta no desktop) ---------- */
+
+  dialog.painel {
+    position: fixed;
+    inset: auto 0 0 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: min(92svh, 860px);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 20px 20px 0 0;
+    background: var(--c-painel);
+    color: var(--c-texto);
+    overflow: hidden;
+    transition: transform 0.3s var(--ease-out);
+  }
+
+  dialog.painel[open] {
+    display: flex;
+    animation: painel-sobe 0.42s var(--ease-out);
+  }
+
+  dialog.painel.saindo {
+    transform: translateY(100%);
+  }
+
+  @media (max-width: 760px) {
+    dialog.painel:not(.saindo) {
+      transform: translateY(var(--arraste, 0px));
+    }
+    dialog.painel.arrastando {
+      transition: none;
+    }
+  }
+
+  dialog.painel.saindo::backdrop {
+    opacity: 0;
+  }
+
+  dialog.painel::backdrop {
+    background: rgb(30 10 10 / 0.5);
+    backdrop-filter: blur(3px);
+    transition: opacity 0.3s;
+    animation: fundo-entra 0.3s;
+  }
+
+  @keyframes painel-sobe {
+    from {
+      transform: translateY(100%);
+    }
+  }
+
+  @keyframes painel-lado {
+    from {
+      transform: translateX(100%);
+    }
+  }
+
+  @keyframes fundo-entra {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @media (min-width: 761px) {
+    dialog.painel {
+      inset: 0 0 0 auto;
+      width: min(480px, 100%);
+      height: 100%;
+      max-height: 100%;
+      border-radius: 0;
+    }
+    dialog.painel[open] {
+      animation-name: painel-lado;
+    }
+    dialog.painel.saindo {
+      transform: translateX(100%);
+    }
+  }
+
+  .painel__caixa {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-height: inherit;
+    min-height: 0;
+  }
+
+  .painel__passo {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .painel__passo[hidden] {
+    display: none;
+  }
+
+  .painel__topo {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    padding: 12px var(--gutter) 0;
+    min-height: 56px;
+  }
+
+  .painel__alca {
+    display: none;
+  }
+
+  @media (max-width: 760px) {
+    .painel__topo {
+      touch-action: none;
+    }
+    .painel__alca {
+      position: absolute;
+      top: 7px;
+      left: 50%;
+      display: block;
+      width: 40px;
+      height: 4px;
+      margin-left: -20px;
+      border-radius: 2px;
+      background: color-mix(in srgb, var(--c-texto) 25%, transparent);
+    }
+    #painel-item .painel__alca {
+      background: color-mix(in srgb, var(--c-claro) 85%, transparent);
+      box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+    }
+    #painel-item .painel__topo {
+      pointer-events: auto;
+    }
+    #painel-item.rolado .painel__alca {
+      background: color-mix(in srgb, var(--c-texto) 25%, transparent);
+      box-shadow: none;
+    }
+  }
+
+  .painel__topo-nome {
+    flex: 1;
+    margin: 0;
+    font-family: var(--f-display);
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    opacity: 0;
+    transform: translateY(4px);
+    transition:
+      opacity 0.25s var(--ease-out),
+      transform 0.25s var(--ease-out);
+  }
+
+  #painel-item.rolado .painel__topo {
+    background: var(--c-painel);
+    border-bottom: 1px solid var(--c-linha-suave);
+    pointer-events: auto;
+  }
+
+  #painel-item.rolado .painel__topo-nome {
+    opacity: 1;
+    transform: none;
+  }
+
+  #painel-item.rolado .painel__fechar {
+    box-shadow: none;
+    background: color-mix(in srgb, var(--c-texto) 9%, transparent);
+  }
+
+  #painel-item .painel__topo {
+    transition:
+      background-color 0.25s,
+      border-color 0.25s;
+    border-bottom: 1px solid transparent;
+  }
+
+  .painel__topo--titulo {
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--c-linha-suave);
+  }
+
+  .painel__etapa {
+    margin-left: 0.5em;
+    font-family: var(--f-texto);
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    opacity: 0.7;
+    white-space: nowrap;
+  }
+
+  /* Celular: a etapa vai pra linha de baixo, o título não quebra no meio */
+  @media (max-width: 480px) {
+    .painel__etapa {
+      display: block;
+      margin: 0.1rem 0 0;
+    }
+  }
+
+  .painel__titulo {
+    flex: 1;
+    margin: 0;
+    font-family: var(--f-display);
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .painel__fechar,
+  .painel__voltar {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--c-texto) 9%, transparent);
+    color: var(--c-texto);
+  }
+
+  .painel__fechar:hover,
+  .painel__voltar:hover {
+    background: color-mix(in srgb, var(--c-texto) 16%, transparent);
+  }
+
+  .painel__fechar svg,
+  .painel__voltar svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  #painel-item .painel__topo {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  #painel-item .painel__fechar {
+    pointer-events: auto;
+    background: var(--c-painel);
+    box-shadow: 0 4px 12px -4px rgb(0 0 0 / 0.3);
+  }
+
+  .painel__corpo {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 20px var(--gutter) 24px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--c-linha) transparent;
+  }
+
+  #painel-item .painel__corpo {
+    padding-top: 64px;
+  }
+
+  #painel-item .painel__corpo:has(.item-painel__foto:not([hidden])) {
+    padding-top: 0;
+  }
+
+  .painel__base {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 14px var(--gutter) calc(14px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--c-linha-suave);
+    background: var(--c-painel);
+  }
+
+  .painel__base[hidden] {
+    display: none;
+  }
+
+  .painel__base--coluna {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .painel__acao {
+    flex: 1;
+    justify-content: space-between;
+  }
+
+  .painel__base--coluna .painel__acao {
+    justify-content: center;
+  }
+
+  /* ---------- Conteúdo do item ---------- */
+
+  .item-painel__foto {
+    margin: 0 calc(var(--gutter) * -1) 20px;
+    aspect-ratio: 16 / 11;
+    overflow: hidden;
+    background: var(--c-escuro);
+  }
+
+  .item-painel__foto[hidden] {
+    display: none;
+  }
+
+  .item-painel__foto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: var(--foto-filtro);
+  }
+
+  /* Celular: a foto abre o apetite mas não empurra as escolhas pra fora da tela */
+  @media (max-width: 760px) {
+    .item-painel__foto {
+      aspect-ratio: auto;
+      height: max(140px, 24svh);
+    }
+  }
+
+  .item-painel__nome {
+    font-size: clamp(2.4rem, 8vw, 3rem);
+  }
+
+  .item-painel__desc {
+    margin: 0.7rem 0 0;
+    line-height: 1.5;
+  }
+
+  .item-painel__preco {
+    margin: 0.7rem 0 0;
+    font-family: var(--f-display);
+    font-size: 1.3rem;
+    font-weight: 700;
+  }
+
+  .item-painel__nota {
+    display: block;
+    margin-top: 0.15rem;
+    font-family: var(--f-texto);
+    font-size: 0.85rem;
+    font-weight: 400;
+    opacity: 0.8;
+  }
+
+  /* Meio a meio fechado por padrão: a pizza abre com tamanho e borda só */
+  .meio__abrir {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 48px;
+    padding-block: 0.6rem;
+    border-top: 1px solid var(--c-linha-suave);
+    border-bottom: 1px solid var(--c-linha-suave);
+    font-family: var(--f-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .meio__abrir::-webkit-details-marker {
+    display: none;
+  }
+
+  /* Setinha desenhada: aponta pra baixo fechada, pra cima aberta */
+  .meio__abrir::after {
+    content: "";
+    flex: none;
+    width: 8px;
+    height: 8px;
+    margin: 0 0.3rem 0.2rem 0.2rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+    transition: transform 0.25s var(--ease-out);
+  }
+
+  .meio[open] .meio__abrir::after {
+    transform: translateY(3px) rotate(-135deg);
+  }
+
+  .meio[open] .meio__abrir {
+    border-bottom: 0;
+  }
+
+  .meio__abrir::after {
+    margin-left: auto;
+  }
+
+  /* ---------- Grupos e escolhas ---------- */
+
+  .grupo {
+    margin: 26px 0 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+
+  .grupo__titulo {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0 0 10px;
+    font-family: var(--f-display);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .grupo__selo {
+    flex: none;
+    padding: 0.25rem 0.55rem;
+    border-radius: var(--raio-pill);
+    background: color-mix(in srgb, var(--c-texto) 10%, transparent);
+    font-family: var(--f-texto);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .grupo.com-erro .grupo__selo {
+    background: #b3261e;
+    color: #fff6ea;
+  }
+
+  .grupo__ajuda {
+    margin: -4px 0 10px;
+    font-size: 0.88rem;
+  }
+
+  .escolhas {
+    display: grid;
+    border-top: 1px solid var(--c-linha-suave);
+  }
+
+  .escolhas--lado {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-auto-rows: 1fr;
+    gap: 8px;
+    border: 0;
+  }
+
+  .escolha {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    min-height: 52px;
+    padding: 0.6rem 0.2rem;
+    border-bottom: 1px solid var(--c-linha-suave);
+    cursor: pointer;
+  }
+
+  .escolhas--lado .escolha:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .escolhas--lado .escolha {
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--c-linha);
+    border-radius: var(--raio);
+    transition:
+      background-color 0.2s,
+      border-color 0.2s;
+  }
+
+  .escolhas--lado .escolha:has(input:checked) {
+    border-color: var(--c-acao);
+    background: color-mix(in srgb, var(--c-acao) 8%, transparent);
+  }
+
+  .escolha input {
+    flex: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    margin: 0;
+    border: 1.5px solid var(--c-texto);
+    border-radius: 50%;
+    background: transparent;
+    display: grid;
+    place-items: center;
+    transition:
+      background-color 0.2s,
+      box-shadow 0.2s;
+  }
+
+  .escolha input[type="checkbox"] {
+    border-radius: 6px;
+  }
+
+  .escolha input:focus-visible {
+    outline: none;
+  }
+
+  .escolha:has(input:focus-visible) {
+    outline: 2px solid var(--c-acao);
+    outline-offset: 2px;
+    border-radius: var(--raio);
+  }
+
+  .escolha input:checked {
+    background: var(--c-acao);
+    border-color: var(--c-acao);
+    box-shadow: inset 0 0 0 4px var(--c-painel);
+  }
+
+  .escolha input[type="checkbox"]:checked {
+    box-shadow: none;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff6ea' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E")
+        center / 14px no-repeat,
+      var(--c-acao);
+  }
+
+  .escolha input:disabled {
+    opacity: 0.35;
+  }
+
+  .escolha:has(input:disabled) {
+    cursor: not-allowed;
+  }
+
+  .escolha:has(input:disabled) .escolha__nome {
+    opacity: 0.5;
+  }
+
+  .escolha__nome {
+    flex: 1;
+    display: grid;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .escolha__nome small {
+    font-size: 0.8rem;
+    font-weight: 400;
+    opacity: 0.8;
+  }
+
+  .escolha__preco {
+    flex: none;
+    font-size: 0.92rem;
+    font-weight: 600;
+  }
+
+  /* ---------- Campos ---------- */
+
+  .campo {
+    display: grid;
+    gap: 0.4rem;
+    margin-top: 22px;
+  }
+
+  .campo:first-child {
+    margin-top: 0;
+  }
+
+  .campo__rotulo {
+    font-family: var(--f-display);
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  .campo__rotulo small {
+    font-family: var(--f-texto);
+    font-size: 0.82rem;
+    font-weight: 400;
+  }
+
+  .campo input,
+  .campo select,
+  .campo textarea {
+    width: 100%;
+    min-height: 50px;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--c-linha);
+    border-radius: var(--raio);
+    background: #fffaf2;
+    color: var(--c-tinta);
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .campo textarea {
+    resize: vertical;
+    min-height: 74px;
+  }
+
+  .campo input::placeholder,
+  .campo textarea::placeholder {
+    color: color-mix(in srgb, var(--c-texto) 72%, #fffaf2);
+  }
+
+  .campo input:focus,
+  .campo select:focus,
+  .campo textarea:focus {
+    outline: none;
+    border-color: var(--c-texto);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-texto) 18%, transparent);
+  }
+
+  .campo select {
+    appearance: none;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23381719' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+        right 0.8rem center / 18px no-repeat,
+      #fffaf2;
+  }
+
+  .campo__erro {
+    display: none;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: #b3261e;
+  }
+
+  .com-erro .campo__erro {
+    display: block;
+    margin-top: 6px;
+  }
+
+  .com-erro input,
+  .com-erro select {
+    border-color: #b3261e;
+  }
+
+  .entrega-campos {
+    margin-top: 6px;
+  }
+
+  .entrega-campos[hidden],
+  .campo[hidden] {
+    display: none;
+  }
+
+  /* ---------- Quantidade ---------- */
+
+  .qtd {
+    display: flex;
+    align-items: center;
+    flex: none;
+    border: 1px solid var(--c-linha);
+    border-radius: var(--raio-pill);
+  }
+
+  .qtd button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 50px;
+    border: 0;
+    background: none;
+    color: var(--c-texto);
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+
+  .qtd button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .qtd output {
+    min-width: 1.6em;
+    text-align: center;
+    font-weight: 700;
+  }
+
+  .qtd--pequeno button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .qtd--pequeno button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* ---------- Sacola ---------- */
+
+  .sacola {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .sacola__linha {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.6rem 1rem;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--c-linha-suave);
+  }
+
+  .sacola__linha:first-child {
+    padding-top: 0;
+  }
+
+  .sacola__info {
+    min-width: 0;
+  }
+
+  .sacola__nome,
+  .sacola__det {
+    overflow-wrap: anywhere;
+  }
+
+  .sacola__nome {
+    margin: 0 0 0.25rem;
+    font-family: var(--f-display);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .sacola__det {
+    margin: 0;
+    font-size: 0.86rem;
+    line-height: 1.4;
+  }
+
+  .sacola__preco {
+    margin: 0;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .sacola__acoes {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .sacola__editar {
+    min-height: 44px;
+    padding: 0.4rem 1rem;
+    border: 0;
+    border-radius: var(--raio-pill);
+    background: color-mix(in srgb, var(--c-texto) 9%, transparent);
+    color: var(--c-texto);
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .sacola__editar:hover {
+    background: color-mix(in srgb, var(--c-texto) 16%, transparent);
+  }
+
+  .sacola__linha--removida {
+    position: relative;
+  }
+
+  .sacola__linha--removida > :not(.sacola__removida) {
+    visibility: hidden;
+  }
+
+  .sacola__removida {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    color: color-mix(in srgb, var(--c-texto) 80%, transparent);
+    animation: some-linha 0.3s var(--ease-out);
+  }
+
+
+  .sacola__removida p {
+    margin: 0;
+    font-size: 0.92rem;
+  }
+
+  .sacola__desfazer {
+    min-height: 44px;
+    padding: 0.4rem 1rem;
+    border: 1px solid var(--c-texto);
+    border-radius: var(--raio-pill);
+    background: none;
+    color: var(--c-texto);
+    font-size: 0.88rem;
+    font-weight: 700;
+  }
+
+  .sacola__desfazer:hover {
+    background: var(--c-texto);
+    color: var(--c-painel);
+  }
+
+  @keyframes some-linha {
+    from {
+      opacity: 0;
+    }
+  }
+
+  /* Botão com rótulo e valor: lado a lado quando cabe, empilhado quando não */
+  .botao--duplo {
+    flex-wrap: wrap;
+    column-gap: 0.8rem;
+    row-gap: 0;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .botao__rotulo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+
+  .botao__valor {
+    white-space: nowrap;
+  }
+
+  [data-enviar].botao--duplo,
+  [data-conferir].botao--duplo {
+    flex-direction: column;
+    padding-block: 0.6rem;
+  }
+
+  [data-enviar] .botao__valor,
+  [data-conferir] .botao__valor {
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0.92;
+  }
+
+  @media (max-width: 420px) {
+    [data-item-adicionar].botao--duplo {
+      flex-direction: column;
+      padding: 0.5rem 1rem;
+    }
+    [data-item-adicionar] .botao__valor {
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    #painel-item .qtd button {
+      width: 44px;
+    }
+  }
+
+  .lista-notas {
+    display: grid;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .lista-notas[hidden] {
+    display: none;
+  }
+
+  .como-funciona {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    opacity: 0.8;
+  }
+
+  .lista-entrega--falta {
+    font-weight: 600;
+  }
+
+  .painel__base--item {
+    flex-wrap: wrap;
+  }
+
+  .qtd-limite {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .escolha:has(input:disabled) .escolha__nome small {
+    opacity: 1;
+  }
+
+  .lista-entrega {
+    margin: -0.3rem 0 0.2rem;
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
+  .grupo--primeiro {
+    margin-top: 0;
+  }
+
+  .nome-salvo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 22px 0 0;
+  }
+
+  .nome-salvo__trocar {
+    min-height: 44px;
+    padding: 0 0.4rem;
+    border: 0;
+    background: none;
+    color: var(--c-texto);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  /* ---------- Comanda: prévia da mensagem ---------- */
+
+  .comanda__papel {
+    position: relative;
+    padding: 18px 18px 22px;
+    background: #fffaf2;
+    color: var(--c-tinta);
+    border-radius: 4px 4px 0 0;
+    box-shadow: 0 10px 24px -16px rgb(0 0 0 / 0.45);
+    font-size: 0.86rem;
+    line-height: 1.45;
+    /* borda de papel picotado embaixo */
+    --dente: 8px;
+    mask:
+      linear-gradient(#000 0 0) top / 100% calc(100% - var(--dente)) no-repeat,
+      radial-gradient(circle at 50% 100%, transparent calc(var(--dente) * 0.55), #000 calc(var(--dente) * 0.6)) bottom / calc(var(--dente) * 2) var(--dente) repeat-x;
+  }
+
+  .comanda__papel::before {
+    content: "";
+    position: absolute;
+    inset: 8px 8px calc(8px + var(--dente));
+    border: 1px dashed color-mix(in srgb, var(--c-tinta) 30%, transparent);
+    pointer-events: none;
+  }
+
+  .comanda__papel p {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .comanda__papel hr {
+    height: 0;
+    margin: 8px 0;
+    border: 0;
+    border-top: 1px dashed color-mix(in srgb, var(--c-tinta) 30%, transparent);
+  }
+
+  .comanda__det {
+    padding-left: 1.2em;
+    font-size: 0.8rem;
+  }
+
+  .comanda__falta {
+    padding: 0 0.3em;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--c-tinta) 10%, transparent);
+    font-style: italic;
+  }
+
+  .com-erro input:focus,
+  .com-erro select:focus {
+    border-color: #b3261e;
+    box-shadow: 0 0 0 3px rgb(179 38 30 / 0.2);
+  }
+
+  .painel__acao--falta {
+    background: var(--c-texto);
+  }
+
+  .painel__acao--falta:hover {
+    background: color-mix(in srgb, var(--c-texto) 88%, #000);
+  }
+
+  .item-painel__nome:focus,
+  .painel__titulo:focus {
+    outline: none;
+  }
+
+  .item-painel__nome:focus-visible,
+  .painel__titulo:focus-visible {
+    outline: 2px solid var(--c-texto);
+    outline-offset: 4px;
+  }
+
+  .linha-total {
+    display: flex;
+    justify-content: space-between;
+    margin: 0;
+  }
+
+  .linha-total--forte {
+    margin-top: 0.4rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--c-linha-suave);
+    font-family: var(--f-display);
+    font-size: 1.3rem;
+    font-weight: 700;
+  }
+
+
+
+  .aviso {
+    margin: 0;
+    padding: 0.7rem 0.9rem;
+    border-radius: var(--raio);
+    background: color-mix(in srgb, var(--c-texto) 10%, transparent);
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .aviso + .aviso,
+  .aviso + .sacola,
+  .aviso--zap + .sacola {
+    margin-top: 12px;
+  }
+
+  .painel__corpo > .aviso:not([hidden]) ~ .sacola {
+    margin-top: 16px;
+  }
+
+  .aviso--zap {
+    display: grid;
+    gap: 0.7rem;
+  }
+
+  .aviso--zap p {
+    margin: 0;
+  }
+
+  .aviso__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .conferir__intro,
+  .conferir__depois {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.45;
+  }
+
+  .conferir__intro {
+    margin-bottom: 16px;
+  }
+
+  .conferir__depois {
+    margin-top: 18px;
+    opacity: 0.85;
+  }
+
+  /* Na conferência a comanda é o conteúdo principal: letra maior */
+  .comanda__papel--cheia {
+    font-size: 0.95rem;
+  }
+
+  .campo__contador {
+    justify-self: end;
+    margin-top: 4px;
+    font-size: 0.78rem;
+    opacity: 0.75;
+  }
+
+  .campo__ajuda {
+    font-size: 0.88rem;
+    line-height: 1.4;
+    margin-top: 6px;
+  }
+
+
+
+
+
+
+
+
+
+  .qtd button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .nota {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    text-align: center;
+    opacity: 0.85;
+  }
+
+  .botao--zap {
+    background: #1f7a44;
+  }
+
+  .botao--zap:hover {
+    background: #17633a;
+  }
+
+  .botao--contorno {
+    border: 1px solid var(--c-linha);
+  }
+
+  /* ---------- Vazio e enviado ---------- */
+
+  .vazio {
+    display: grid;
+    justify-items: center;
+    gap: 0.6rem;
+    padding-block: 48px;
+    text-align: center;
+  }
+
+  .enviado {
+    display: grid;
+    justify-items: start;
+    align-content: start;
+    gap: 0.8rem;
+    padding-block: 32px;
+  }
+
+  .enviado__prazo {
+    font-weight: 600;
+  }
+
+  .enviado__dica {
+    font-size: 0.88rem;
+    opacity: 0.85;
+  }
+
+  .enviado__numero {
+    white-space: nowrap;
+  }
+
+  .enviado__copiar {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
+  .vazio[hidden] {
+    display: none;
+  }
+
+  .vazio p,
+  .enviado p {
+    margin: 0;
+    max-width: 32ch;
+  }
+
+  .vazio .botao {
+    margin-top: 1rem;
+  }
+
+  .vazio__icone,
+  .enviado__icone {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 0.4rem;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--c-texto) 10%, transparent);
+  }
+
+  .vazio__icone svg,
+  .enviado__icone svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .enviado__icone {
+    background: #1f7a44;
+    color: #fff;
+  }
+
+  .enviado__titulo {
+    font-size: 3rem;
+  }
+</style>

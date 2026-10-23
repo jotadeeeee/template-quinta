@@ -1,0 +1,416 @@
+---
+import { horariosAgrupados, loja, srcsetDe, statusLoja } from "../scripts/lib";
+import { icons } from "./icons";
+
+const { hero, endereco } = loja;
+// Status calculado no build só como fallback; o navegador recalcula na hora.
+const status = statusLoja(loja.horarios);
+---
+
+<div class="topo-fixo sobre-escuro" data-topo-fixo data-visivel="false" inert>
+  <div class="wrap topo-fixo__linha">
+    <a href="#topo" class="topo-fixo__marca" aria-label={`${loja.nome}, voltar ao início`}>{loja.nome}</a>
+    <span class="rotulo status" data-status data-aberto={String(status.aberto)}><span class="status__longo">{status.texto}</span><span class="status__curto">{status.curto}</span></span>
+    <ul class="topo-fixo__links">
+      <li><a href="#cardapio">Cardápio</a></li>
+      <li><a href="#sobre">Sobre</a></li>
+      <li><a href="#visita">Onde estamos</a></li>
+    </ul>
+  </div>
+</div>
+
+<header class="hero sobre-escuro" id="topo">
+  <picture class="hero__foto">
+    <source media="(max-width: 760px)" srcset={srcsetDe(hero.imagemMobile) ?? hero.imagemMobile} sizes="100vw" />
+    <img src={hero.imagem} srcset={srcsetDe(hero.imagem)} sizes="100vw" alt="" fetchpriority="high" />
+  </picture>
+
+  <nav class="topo wrap" aria-label="Principal">
+    <a href="#topo" class="topo__marca" aria-label={`${loja.nome}, início`}>{loja.nome}</a>
+    <ul class="topo__links">
+      <li><a href="#cardapio">Cardápio</a></li>
+      <li><a href="#sobre">Sobre</a></li>
+      <li><a href="#visita">Onde estamos</a></li>
+    </ul>
+    <span class="rotulo status topo__status" data-status data-aberto={String(status.aberto)}><span class="status__longo">{status.texto}</span><span class="status__curto">{status.curto}</span></span>
+  </nav>
+
+  <div class="hero__conteudo wrap">
+    <div class="hero__principal">
+      <p class="hero__saudacao">{hero.saudacao}</p>
+      <h1 class="display hero__titulo">{hero.titulo}</h1>
+      <p class="texto hero__texto">{hero.texto}</p>
+      <a href="#cardapio" class="botao botao--grande hero__cta">
+        Ver cardápio <Fragment set:html={icons.baixo} />
+      </a>
+    </div>
+
+    <!-- A comanda (mesmo papel do fim do pedido) carrega o argumento já na primeira tela -->
+    <div class="hero__lado">
+      <div class="comanda__papel hero__comanda">
+        <p><strong>Pedido · {loja.nome}</strong></p>
+        <hr />
+        {hero.comanda?.destaque && <p class="hero__comanda-destaque">{hero.comanda.destaque}</p>}
+        {hero.comanda?.texto && <p class="hero__comanda-texto">{hero.comanda.texto}</p>}
+        <hr class="hero__so-largo" />
+        <p class="hero__so-largo">{endereco.bairro}, {endereco.cidade.split(",")[0]}</p>
+        {horariosAgrupados(loja.horarios).map((h) => <p class="hero__so-largo hero__hora"><em>{h.dias}</em> {h.horas}</p>)}
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  // Barra fixa com o status aparece quando o hero sai da tela
+  const barra = document.querySelector<HTMLElement>("[data-topo-fixo]")!;
+  const hero = document.querySelector<HTMLElement>(".hero")!;
+  new IntersectionObserver(
+    ([en]) => {
+      barra.dataset.visivel = String(!en.isIntersecting);
+      // Escondida, a barra não pode receber foco do teclado
+      barra.inert = en.isIntersecting;
+    },
+    {
+      rootMargin: "-56px 0px 0px 0px",
+    },
+  ).observe(hero);
+</script>
+
+<style>
+  /* ---------- Barra fixa com status ---------- */
+
+  .topo-fixo {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 30;
+    height: var(--h-topo);
+    display: flex;
+    align-items: center;
+    background: var(--c-escuro);
+    color: var(--c-claro);
+    box-shadow: 0 8px 20px -14px rgb(0 0 0 / 0.5);
+    transform: translateY(-100%);
+    transition: transform 0.45s var(--ease-out);
+  }
+
+  .topo-fixo[data-visivel="true"] {
+    transform: none;
+  }
+
+  .topo-fixo__linha {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+  }
+
+  .topo-fixo__marca {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-family: var(--f-display);
+    font-weight: 900;
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+
+  .topo-fixo .status {
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--raio-pill);
+    background: rgb(255 255 255 / 0.1);
+    white-space: nowrap;
+  }
+
+  .topo-fixo__links {
+    display: flex;
+    gap: 1.4rem;
+    margin: 0 0 0 auto;
+    padding: 0;
+    list-style: none;
+    font-size: 0.88rem;
+    font-weight: 500;
+  }
+
+  .topo-fixo__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    text-decoration: none;
+  }
+
+  .topo-fixo__links a:hover {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 760px) {
+    .topo-fixo__linha {
+      justify-content: space-between;
+    }
+    .topo-fixo__links {
+      display: none;
+    }
+  }
+
+  .hero {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: clamp(560px, 74svh, 780px);
+    --c-titulo: var(--c-claro);
+    color: var(--c-claro);
+    background: var(--c-escuro);
+    overflow: hidden;
+  }
+
+  .hero__foto,
+  .hero__foto img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+  }
+
+  .hero__foto img {
+    object-fit: cover;
+    object-position: 60% 50%;
+    animation: hero-zoom 1.8s var(--ease-out) both;
+  }
+
+  .hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(to top, rgb(28 10 8 / 0.82) 0%, rgb(28 10 8 / 0.25) 55%, rgb(28 10 8 / 0.5) 100%),
+      linear-gradient(to right, rgb(28 10 8 / 0.55) 0%, transparent 60%);
+  }
+
+  /* ---------- Topo ---------- */
+
+  .topo {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 1rem;
+    padding-block: 18px;
+  }
+
+  .topo__marca {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-family: var(--f-display);
+    font-weight: 900;
+    font-stretch: 100%;
+    font-size: 1.6rem;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+
+  .topo__links {
+    display: flex;
+    gap: 0.2rem;
+    margin: 0;
+    padding: 0.3rem;
+    list-style: none;
+    background: var(--c-acao);
+    color: var(--c-sobre-acao);
+    border-radius: var(--raio-pill);
+  }
+
+  .topo__links a {
+    display: block;
+    padding: 0.45rem 0.95rem;
+    border-radius: var(--raio-pill);
+    font-size: 0.88rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background-color 0.2s;
+  }
+
+  .topo__links a:hover {
+    background: rgb(255 255 255 / 0.12);
+  }
+
+  /* ---------- Conteúdo ---------- */
+
+  .hero__conteudo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+    align-items: end;
+    gap: 2rem;
+    padding-bottom: clamp(28px, 4vw, 44px);
+  }
+
+  .hero__saudacao {
+    margin: 0 0 0.3rem;
+    font-family: var(--f-display);
+    font-weight: 500;
+    font-size: clamp(1.4rem, 2.4vw, 2rem);
+    letter-spacing: -0.02em;
+  }
+
+  .hero__titulo {
+    font-size: clamp(4.4rem, 13vw, 9.5rem);
+    /* Entrelinha 0.88 corta o acento de maiúscula (É, Ó, Ã): o respiro acima é do tamanho do acento */
+    padding-top: 0.14em;
+    margin-bottom: clamp(1.2rem, 3vw, 2.4rem);
+    animation: titulo-sobe 0.35s var(--ease-out) both;
+  }
+
+  .hero__texto {
+    max-width: 40ch;
+    color: color-mix(in srgb, var(--c-claro) 90%, transparent);
+  }
+
+  .hero__cta {
+    margin-top: 1.6rem;
+  }
+
+  .hero__lado {
+    display: grid;
+    justify-items: end;
+  }
+
+  /* Comanda presa no canto: sai "impressa" de cima pra baixo uma vez ao carregar */
+  .hero__comanda {
+    width: min(100%, 340px);
+    padding: 22px 22px 26px;
+    font-size: 0.9rem;
+    box-shadow: 0 24px 40px -18px rgb(0 0 0 / 0.6);
+    rotate: -2.5deg;
+    transform-origin: 50% 0;
+    animation: comanda-imprime 0.9s 0.35s var(--ease-out) both;
+  }
+
+  .hero__comanda-destaque {
+    font-family: var(--f-display);
+    font-weight: 900;
+    font-stretch: 75%;
+    font-variation-settings: "wdth" 75;
+    font-size: 1.9rem;
+    line-height: 1;
+    text-transform: uppercase;
+    color: var(--c-acao);
+  }
+
+  .hero__comanda-texto {
+    margin-top: 0.4rem !important;
+    text-wrap: pretty;
+  }
+
+  .hero__hora {
+    white-space: nowrap;
+  }
+
+  .hero__hora em {
+    display: inline-block;
+    min-width: 5.6em;
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  .topo__status {
+    justify-self: end;
+    padding: 0.55rem 0.9rem;
+    border-radius: var(--raio-pill);
+    background: rgb(0 0 0 / 0.35);
+    backdrop-filter: blur(6px);
+    white-space: nowrap;
+  }
+
+  @keyframes titulo-sobe {
+    from {
+      opacity: 0;
+      transform: translateY(0.12em);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes comanda-imprime {
+    from {
+      clip-path: inset(0 0 100% 0);
+      translate: 0 -12px;
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+      translate: 0 0;
+    }
+  }
+
+  @keyframes hero-zoom {
+    from {
+      transform: scale(1.08);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
+
+  @media (max-width: 900px) {
+    .topo__links {
+      display: none;
+    }
+    .topo {
+      grid-template-columns: 1fr auto;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .hero {
+      min-height: 58svh;
+    }
+    .hero__foto img {
+      object-position: 50% 40%;
+    }
+    .hero__titulo {
+      font-size: clamp(3.6rem, 17vw, 4.6rem);
+      margin-bottom: 0.9rem;
+    }
+    /* No celular a comanda substitui o parágrafo: só o argumento, sem horário (já está no topo) */
+    .hero__texto,
+    .hero__so-largo {
+      display: none;
+    }
+    /* Ordem no celular: saudação, título, comanda, botão */
+    .hero__conteudo {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+    }
+    .hero__principal {
+      display: contents;
+    }
+    .hero__lado {
+      order: 1;
+      justify-items: start;
+      width: 100%;
+    }
+    .hero__cta {
+      order: 2;
+    }
+    .hero__comanda {
+      width: min(100%, 300px);
+      padding: 14px 16px 20px;
+      font-size: 0.86rem;
+      rotate: -1.5deg;
+    }
+    .hero__comanda-destaque {
+      font-size: 1.6rem;
+    }
+    .hero__cta {
+      margin-top: 1.3rem;
+    }
+  }
+</style>

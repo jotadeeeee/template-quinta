@@ -1,0 +1,500 @@
+{
+  "grupos": {
+    "ponto-carne": {
+      "nome": "Ponto da carne",
+      "tipo": "unico",
+      "obrigatorio": true,
+      "padrao": 0,
+      "opcoes": [
+        {
+          "nome": "Ao ponto",
+          "preco": 0
+        },
+        {
+          "nome": "Bem passado",
+          "preco": 0
+        }
+      ]
+    },
+    "adicionais-burger": {
+      "nome": "Adicionais",
+      "tipo": "multiplo",
+      "obrigatorio": false,
+      "max": 4,
+      "opcoes": [
+        {
+          "nome": "Bacon",
+          "preco": 5
+        },
+        {
+          "nome": "Cheddar extra",
+          "preco": 4
+        },
+        {
+          "nome": "Ovo",
+          "preco": 3
+        },
+        {
+          "nome": "Cebola caramelizada",
+          "preco": 4
+        },
+        {
+          "nome": "Carne extra 90g",
+          "preco": 9
+        }
+      ]
+    },
+    "tamanho-pizza": {
+      "nome": "Tamanho",
+      "tipo": "unico",
+      "obrigatorio": true,
+      "padrao": 0,
+      "opcoes": [
+        {
+          "nome": "Média · 6 fatias",
+          "preco": 0
+        },
+        {
+          "nome": "Grande · 8 fatias",
+          "preco": 12
+        },
+        {
+          "nome": "Família · 12 fatias",
+          "preco": 24
+        }
+      ]
+    },
+    "borda-pizza": {
+      "nome": "Borda",
+      "tipo": "unico",
+      "obrigatorio": true,
+      "padrao": 0,
+      "opcoes": [
+        {
+          "nome": "Sem borda recheada",
+          "preco": 0,
+          "silencioso": true
+        },
+        {
+          "nome": "Catupiry",
+          "preco": 8
+        },
+        {
+          "nome": "Cheddar",
+          "preco": 8
+        },
+        {
+          "nome": "Chocolate",
+          "preco": 10
+        }
+      ]
+    },
+    "acompanhamento": {
+      "nome": "Acompanhamento",
+      "pedir": "Escolher o acompanhamento",
+      "tipo": "unico",
+      "obrigatorio": true,
+      "opcoes": [
+        {
+          "nome": "Arroz e feijão",
+          "preco": 0
+        },
+        {
+          "nome": "Batata frita",
+          "preco": 0
+        },
+        {
+          "nome": "Salada da casa",
+          "preco": 0
+        },
+        {
+          "nome": "Purê de batata",
+          "preco": 3
+        }
+      ]
+    },
+    "tamanho-prato": {
+      "nome": "Tamanho",
+      "tipo": "unico",
+      "obrigatorio": true,
+      "padrao": 0,
+      "opcoes": [
+        {
+          "nome": "Individual",
+          "preco": 0
+        },
+        {
+          "nome": "Serve 2",
+          "preco": 28
+        }
+      ]
+    },
+    "sabor-refri": {
+      "nome": "Sabor",
+      "pedir": "Escolher o sabor",
+      "tipo": "unico",
+      "obrigatorio": true,
+      "opcoes": [
+        {
+          "nome": "Coca-Cola",
+          "preco": 0
+        },
+        {
+          "nome": "Coca-Cola Zero",
+          "preco": 0
+        },
+        {
+          "nome": "Guaraná",
+          "preco": 0
+        },
+        {
+          "nome": "Soda limonada",
+          "preco": 0
+        }
+      ]
+    },
+    "sabor-suco": {
+      "nome": "Sabor",
+      "pedir": "Escolher a fruta",
+      "tipo": "unico",
+      "obrigatorio": true,
+      "opcoes": [
+        {
+          "nome": "Laranja",
+          "preco": 0
+        },
+        {
+          "nome": "Limão com hortelã",
+          "preco": 0
+        },
+        {
+          "nome": "Maracujá",
+          "preco": 0
+        },
+        {
+          "nome": "Abacaxi com hortelã",
+          "preco": 0
+        }
+      ]
+    },
+    "tamanho-suco": {
+      "nome": "Tamanho",
+      "tipo": "unico",
+      "obrigatorio": true,
+      "padrao": 0,
+      "opcoes": [
+        {
+          "nome": "300 ml",
+          "preco": 0
+        },
+        {
+          "nome": "500 ml",
+          "preco": 4
+        }
+      ]
+    }
+  },
+  "categorias": [
+    {
+      "id": "burgers",
+      "nome": "Burgers",
+      "descricao": "Pão brioche, blend moído na casa. Acompanha batata pequena.",
+      "itens": [
+        {
+          "id": "smash-duplo",
+          "chamada": "O que mais sai da chapa.",
+          "nome": "Smash Duplo",
+          "descricao": "Dois blends de 90g, cheddar, cebola na chapa e molho da casa.",
+          "preco": 38,
+          "foto": "/img/smash-duplo.jpg",
+          "destaque": true,
+          "tag": "Mais pedido",
+          "grupos": [
+            "ponto-carne",
+            "adicionais-burger"
+          ]
+        },
+        {
+          "id": "classico",
+          "nome": "Clássico",
+          "descricao": "Blend de 160g, queijo prato, alface, tomate e maionese verde.",
+          "preco": 34,
+          "foto": "/img/classico.jpg",
+          "grupos": [
+            "ponto-carne",
+            "adicionais-burger"
+          ]
+        },
+        {
+          "id": "bacon-burger",
+          "nome": "Bacon Barbecue",
+          "descricao": "Blend de 160g, bacon crocante, cheddar e barbecue da casa.",
+          "preco": 40,
+          "foto": "/img/bacon-burger.jpg",
+          "grupos": [
+            "ponto-carne",
+            "adicionais-burger"
+          ]
+        },
+        {
+          "id": "salada-burger",
+          "nome": "Salada Completo",
+          "descricao": "Blend de 160g, queijo, alface, tomate, cebola roxa e picles.",
+          "preco": 36,
+          "foto": "/img/salada-burger.jpg",
+          "grupos": [
+            "ponto-carne",
+            "adicionais-burger"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pizzas",
+      "nome": "Pizzas",
+      "descricao": "Massa de fermentação longa, forno a 400°. Pode pedir meio a meio.",
+      "itens": [
+        {
+          "id": "margherita",
+          "chamada": "Forno quente, borda que estala.",
+          "nome": "Margherita",
+          "descricao": "Molho de tomate italiano, muçarela, manjericão e azeite.",
+          "preco": 52,
+          "foto": "/img/pizza-margherita.jpg",
+          "destaque": true,
+          "meioAMeio": true,
+          "grupos": [
+            "tamanho-pizza",
+            "borda-pizza"
+          ]
+        },
+        {
+          "id": "calabresa",
+          "nome": "Calabresa",
+          "descricao": "Calabresa fatiada, cebola, muçarela e orégano.",
+          "preco": 50,
+          "foto": "/img/pizza-calabresa.jpg",
+          "meioAMeio": true,
+          "grupos": [
+            "tamanho-pizza",
+            "borda-pizza"
+          ]
+        },
+        {
+          "id": "rustica",
+          "nome": "Rústica",
+          "descricao": "Muçarela de búfala, tomate-cereja, rúcula e parmesão.",
+          "preco": 62,
+          "foto": "/img/pizza-rustica.jpg",
+          "meioAMeio": true,
+          "grupos": [
+            "tamanho-pizza",
+            "borda-pizza"
+          ]
+        },
+        {
+          "id": "frango-catupiry",
+          "nome": "Frango com Catupiry",
+          "descricao": "Frango desfiado temperado, catupiry original e milho.",
+          "preco": 56,
+          "foto": "/img/pizza-frango.jpg",
+          "meioAMeio": true,
+          "grupos": [
+            "tamanho-pizza",
+            "borda-pizza"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pratos",
+      "nome": "Pratos",
+      "descricao": "Almoço e jantar, porção de verdade.",
+      "itens": [
+        {
+          "id": "penne",
+          "chamada": "O almoço que segura até a noite.",
+          "nome": "Penne ao Sugo",
+          "descricao": "Penne no molho de tomate da casa, manjericão e parmesão.",
+          "preco": 39,
+          "foto": "/img/penne.jpg",
+          "destaque": true,
+          "grupos": [
+            "tamanho-prato"
+          ]
+        },
+        {
+          "id": "file-acebolado",
+          "nome": "Filé Acebolado",
+          "descricao": "Filé alto grelhado com cebola na manteiga e farofa.",
+          "preco": 54,
+          "foto": "/img/prato-carne.jpg",
+          "grupos": [
+            "acompanhamento",
+            "tamanho-prato"
+          ]
+        },
+        {
+          "id": "frango-grelhado",
+          "nome": "Frango Grelhado",
+          "descricao": "Peito marinado no limão e ervas, legumes salteados.",
+          "preco": 42,
+          "foto": "/img/salada-quente.jpg",
+          "grupos": [
+            "acompanhamento",
+            "tamanho-prato"
+          ]
+        },
+        {
+          "id": "bowl",
+          "nome": "Bowl Verde",
+          "descricao": "Grãos, frango, ovo, folhas, milho, tomate e molho de iogurte.",
+          "preco": 36,
+          "foto": "/img/bowl.jpg"
+        }
+      ]
+    },
+    {
+      "id": "cafe",
+      "nome": "Café e lanches",
+      "descricao": "Pra quem passa só pra um café.",
+      "itens": [
+        {
+          "id": "cappuccino",
+          "nome": "Cappuccino",
+          "descricao": "Espresso duplo, leite vaporizado e canela.",
+          "preco": 14,
+          "foto": "/img/cappuccino.jpg"
+        },
+        {
+          "id": "espresso",
+          "nome": "Espresso",
+          "descricao": "Café especial torrado na semana.",
+          "preco": 8,
+          "foto": "/img/espresso.jpg"
+        },
+        {
+          "id": "misto",
+          "nome": "Misto na Chapa",
+          "descricao": "Pão de forma, presunto e queijo, prensado na manteiga.",
+          "preco": 18,
+          "foto": "/img/misto.jpg"
+        },
+        {
+          "id": "pao-de-queijo",
+          "nome": "Pão de Queijo",
+          "descricao": "Porção com 6 unidades, saindo do forno.",
+          "preco": 16,
+          "foto": "/img/pao-de-queijo.jpg"
+        }
+      ]
+    },
+    {
+      "id": "sobremesas",
+      "nome": "Sobremesas",
+      "itens": [
+        {
+          "id": "brownie",
+          "chamada": "Pra fechar com calda quente.",
+          "nome": "Brownie com Calda",
+          "descricao": "Brownie de chocolate meio amargo com calda quente.",
+          "preco": 22,
+          "foto": "/img/brownie.jpg",
+          "destaque": true,
+          "grupos": [
+            {
+              "nome": "Quer completar?",
+              "tipo": "multiplo",
+              "obrigatorio": false,
+              "max": 2,
+              "opcoes": [
+                {
+                  "nome": "Bola de sorvete de creme",
+                  "preco": 6
+                },
+                {
+                  "nome": "Castanhas",
+                  "preco": 3
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "donut",
+          "nome": "Donut Recheado",
+          "descricao": "Massa fofinha, recheio de doce de leite e granulado.",
+          "preco": 14,
+          "foto": "/img/donut.jpg"
+        },
+        {
+          "id": "pudim",
+          "nome": "Pudim da Casa",
+          "descricao": "Pudim de leite condensado, fatia generosa.",
+          "preco": 15,
+          "foto": "/img/pudim.jpg",
+          "indisponivel": true
+        }
+      ]
+    },
+    {
+      "id": "bebidas",
+      "nome": "Bebidas",
+      "itens": [
+        {
+          "id": "refri",
+          "nome": "Refrigerante Lata",
+          "descricao": "350 ml, bem gelado.",
+          "preco": 7,
+          "foto": "/img/refri.jpg",
+          "grupos": [
+            "sabor-refri"
+          ]
+        },
+        {
+          "id": "suco",
+          "nome": "Suco Natural",
+          "descricao": "Feito na hora, sem açúcar (adoça se pedir).",
+          "preco": 12,
+          "foto": "/img/suco.jpg",
+          "grupos": [
+            "sabor-suco",
+            "tamanho-suco"
+          ]
+        },
+        {
+          "id": "cha-gelado",
+          "nome": "Chá Gelado da Casa",
+          "descricao": "Chá preto com limão e hortelã, 400 ml.",
+          "preco": 11,
+          "foto": "/img/cha-gelado.jpg"
+        },
+        {
+          "id": "agua",
+          "nome": "Água Mineral",
+          "descricao": "500 ml.",
+          "preco": 5,
+          "foto": "/img/agua.jpg",
+          "grupos": [
+            {
+              "nome": "Tipo",
+              "tipo": "unico",
+              "obrigatorio": true,
+              "padrao": 0,
+              "opcoes": [
+                {
+                  "nome": "Sem gás",
+                  "preco": 0
+                },
+                {
+                  "nome": "Com gás",
+                  "preco": 0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

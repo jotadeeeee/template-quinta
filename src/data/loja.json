@@ -1,0 +1,95 @@
+{
+  "nome": "Quintal",
+  "descricaoCurta": "Cozinha de bairro",
+  "paleta": "tomate",
+  "corNavegador": "#381719",
+  "icone": { "fundo": "#c84039", "letra": "#fff6ea" },
+  "seo": {
+    "titulo": "Quintal · Cozinha de bairro · Peça pelo WhatsApp",
+    "descricao": "Burger, pizza, prato do dia, café e sobremesa. Você monta o pedido no site e finaliza direto no nosso WhatsApp, sem taxa de app."
+  },
+  "whatsapp": "5511999999999",
+  "instagram": "https://instagram.com/",
+  "instagramUser": "@quintal.cozinha",
+  "endereco": {
+    "rua": "Rua das Laranjeiras, 120",
+    "bairro": "Centro",
+    "cidade": "São Paulo, SP",
+    "mapa": "https://maps.google.com/?q=Rua+das+Laranjeiras+120+Sao+Paulo"
+  },
+  "horarios": [
+    { "dia": 0, "abre": "11:30", "fecha": "23:30" },
+    { "dia": 1, "abre": "11:30", "fecha": "23:30" },
+    { "dia": 2, "abre": "11:30", "fecha": "23:30" },
+    { "dia": 3, "abre": "11:30", "fecha": "23:30" },
+    { "dia": 4, "abre": "11:30", "fecha": "23:30" },
+    { "dia": 5, "abre": "11:30", "fecha": "01:00" },
+    { "dia": 6, "abre": "11:30", "fecha": "01:00" }
+  ],
+  "aceitarPedidoFechado": true,
+  "tempoResposta": "uns 5 minutos",
+  "entrega": {
+    "ativa": true,
+    "tempoMedio": "30 a 45 min",
+    "bairros": [
+      { "nome": "Centro", "taxa": 5 },
+      { "nome": "Vila Nova", "taxa": 7 },
+      { "nome": "Jardim das Flores", "taxa": 8 },
+      { "nome": "Santa Cecília", "taxa": 10 },
+      { "nome": "Outro bairro", "taxa": null, "outro": true }
+    ]
+  },
+  "retirada": {
+    "ativa": true,
+    "tempoMedio": "20 min"
+  },
+  "pagamentos": ["Pix", "Cartão", "Dinheiro"],
+  "pagamentosInfo": {
+    "Pix": "A gente confirma o pedido e envia a chave Pix no WhatsApp. Depois é só pagar e mandar o comprovante por lá.",
+    "Cartão": "Crédito e débito. Na entrega o entregador leva a maquininha; na retirada, o pagamento é no balcão.",
+    "Dinheiro": "Se precisar de troco, é só dizer abaixo quanto vai pagar."
+  },
+  "bairroCombinar": "A taxa pra esse bairro a gente combina com você no WhatsApp antes de confirmar.",
+  "pedidoMinimo": 30,
+
+  "hero": {
+    "saudacao": "Bateu a fome,",
+    "titulo": "É só pedir.",
+    "texto": "Burger na chapa, pizza de forno, prato feito com capricho e café pra fechar. Você monta o pedido aqui e ele chega direto no nosso WhatsApp.",
+    "imagem": "/img/hero.jpg",
+    "imagemMobile": "/img/hero-mobile.jpg",
+    "comanda": {
+      "destaque": "Sem taxa de app",
+      "texto": "Seu pedido vem direto pra gente, já escrito no nosso WhatsApp."
+    }
+  },
+  "cardapioIntro": {
+    "titulo": "{itens} jeitos de matar a fome."
+  },
+  "sobre": {
+    "titulo": "Fome de quê?",
+    "subtitulo": "Cozinha de bairro, porção de verdade.",
+    "texto": "Começou como um balcão de lanche e virou o lugar onde o bairro almoça, janta e volta no fim de semana. Mesa comprida, chapa quente e forno ligado o dia inteiro.",
+    "vitrine": [
+      "/img/vit-chef.jpg",
+      "/img/mesa-amigos.jpg",
+      "/img/vit-plantas.jpg",
+      "/img/vit-pizza.jpg",
+      "/img/salao.jpg",
+      "/img/vit-pessoas.jpg",
+      "/img/mesa.jpg",
+      "/img/vit-drink.jpg",
+      "/img/vit-salao.jpg"
+    ]
+  },
+  "diferencial": {
+    "titulo": "A massa da pizza descansa 48 horas antes de chegar perto do forno.",
+    "texto": "O blend do burger é moído aqui, o prato do dia sai da panela e não do freezer, e nada fica montado esperando pedido. Pediu, a cozinha começa.",
+    "imagem": "/img/pizza-margherita.jpg"
+  },
+  "visita": {
+    "chamada": "Pode vir com fome ou pedir daí",
+    "titulo": "Rua das Laranjeiras, 120",
+    "imagem": "/img/fachada.jpg"
+  }
+}

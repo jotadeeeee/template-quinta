@@ -1,0 +1,586 @@
+---
+import { carregarCardapio, loja, precoCurto, srcsetDe } from "../scripts/lib";
+import { icons } from "./icons";
+
+const categorias = carregarCardapio();
+const destaques = categorias.flatMap((c) => c.itens.filter((i) => i.destaque && !i.indisponivel)).slice(0, 4);
+
+// "{itens}" no título vira o número de itens disponíveis hoje
+const disponiveis = categorias.reduce((n, c) => n + c.itens.filter((i) => !i.indisponivel).length, 0);
+// Preço "a partir de" quando uma escolha obrigatória muda o valor (vale pro destaque e pra lista)
+const aPartirDe = (item: (typeof categorias)[number]["itens"][number]) =>
+  item.grupos.some((g) => g.obrigatorio && g.opcoes.some((o) => o.preco > 0));
+const titulo = loja.cardapioIntro.titulo.replace("{itens}", String(disponiveis));
+---
+
+<section class="cardapio" id="cardapio" aria-labelledby="cardapio-titulo">
+  <div class="wrap cardapio__intro">
+    <h2 class="display titulo-secao cardapio__titulo" id="cardapio-titulo">{titulo}</h2>
+  </div>
+
+  <nav class="categorias" aria-label="Categorias do cardápio" data-categorias>
+    <div class="wrap">
+      <ul class="categorias__lista">
+        {
+          categorias.map((c, i) => (
+            <li>
+              <a href={`#cat-${c.id}`} data-cat-link={c.id} aria-current={i === 0 ? "true" : undefined}>
+                {c.nome}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </nav>
+
+  {
+    destaques.length > 0 && (
+      <div class="wrap destaques" aria-label="Destaques">
+        <ul class="destaques__lista">
+          {destaques.map((item) => (
+            <li>
+              <button type="button" class="destaque" data-abrir-item={item.id}>
+                <span class="destaque__foto">
+                  <img src={item.foto} srcset={srcsetDe(item.foto)} sizes="(max-width: 760px) 100px, 25vw" alt="" loading="lazy" width="900" height="900" />
+                  {item.tag && <span class="destaque__tag rotulo">{item.tag}</span>}
+                </span>
+                <span class="destaque__linha">
+                  <span class="destaque__nome">{item.nome}</span>
+                  <span class="destaque__preco">
+                    {aPartirDe(item) && <small>a partir de </small>}R$&nbsp;{precoCurto(item.preco)}
+                  </span>
+                  <span class="item__mais destaque__mais" aria-hidden="true" set:html={icons.mais} />
+                </span>
+                {item.chamada && <span class="destaque__chamada">{item.chamada}</span>}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
+  <div class="wrap">
+    {
+      categorias.map((cat) => (
+        <section class="categoria" id={`cat-${cat.id}`} data-categoria={cat.id} aria-labelledby={`h-${cat.id}`}>
+          <header class="categoria__topo">
+            <h3 class="display categoria__nome" id={`h-${cat.id}`}>{cat.nome}</h3>
+            {cat.descricao && <p class="categoria__desc">{cat.descricao}</p>}
+          </header>
+          <ul class="itens">
+            {cat.itens.map((item) => (
+              <li>
+                <button
+                  type="button"
+                  class="item"
+                  data-abrir-item={item.id}
+                  aria-disabled={item.indisponivel ? "true" : undefined}
+                  aria-label={`${item.grupos.length === 0 && !item.meioAMeio && !item.indisponivel ? "Adicionar " : ""}${item.nome}, ${aPartirDe(item) ? "a partir de " : ""}R$ ${precoCurto(item.preco)}${item.indisponivel ? ", esgotado" : ""}`}
+                >
+                  {item.foto && (
+                    <span class="item__foto">
+                      <img src={item.foto} srcset={srcsetDe(item.foto)} sizes="72px" alt="" loading="lazy" width="300" height="300" />
+                    </span>
+                  )}
+                  <span class="item__texto">
+                    <span class="item__linha">
+                      <span class="item__nome">{item.nome}</span>
+                      <span class="item__preco">
+                        {aPartirDe(item) && <small>a partir de </small>}
+                        R$&nbsp;{precoCurto(item.preco)}
+                      </span>
+                    </span>
+                    {item.descricao && <span class="item__desc">{item.descricao}</span>}
+                    {item.tag && !item.indisponivel && <span class="rotulo item__tag">{item.tag}</span>}
+                    {item.indisponivel && <span class="rotulo item__esgotado">Esgotado hoje</span>}
+                  </span>
+                  {!item.indisponivel && (
+                    <span class="item__lado">
+                      <span class="item__mais" aria-hidden="true" set:html={icons.mais} />
+                    </span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+</section>
+
+
+<style>
+  .cardapio {
+    background: var(--c-cardapio-fundo);
+    padding-block: clamp(64px, 9vw, 120px) clamp(72px, 9vw, 120px);
+  }
+
+  .cardapio__intro {
+    margin-bottom: clamp(28px, 4vw, 48px);
+  }
+
+  /* ---------- Barra de categorias ---------- */
+
+  .categorias {
+    position: sticky;
+    top: var(--h-topo);
+    z-index: 20;
+    padding-block: 10px;
+    background: var(--c-cardapio-fundo);
+    transition: box-shadow 0.3s var(--ease-out);
+  }
+
+  .categorias[data-fixa="true"] {
+    box-shadow: 0 10px 24px -18px var(--c-sombra);
+  }
+
+  .categorias__lista {
+    display: flex;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  .categorias__lista::-webkit-scrollbar {
+    display: none;
+  }
+
+  .categorias__lista li {
+    scroll-snap-align: start;
+  }
+
+  .categorias__lista a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0.55rem 1rem;
+    border: 1px solid var(--c-linha);
+    border-radius: var(--raio-pill);
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+    text-decoration: none;
+    transition:
+      background-color 0.25s var(--ease-out),
+      color 0.25s var(--ease-out),
+      border-color 0.25s var(--ease-out);
+  }
+
+  .categorias__lista a:hover {
+    border-color: var(--c-texto);
+  }
+
+  .categorias__lista a[aria-current="true"] {
+    background: var(--c-acao);
+    border-color: var(--c-acao);
+    color: var(--c-sobre-acao);
+  }
+
+  /* ---------- Destaques ---------- */
+
+  .destaques {
+    margin-top: clamp(20px, 3vw, 32px);
+  }
+
+  .destaques__lista {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(12px, 1.6vw, 20px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .destaque {
+    display: grid;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-align: left;
+  }
+
+  .destaque__foto {
+    position: relative;
+    display: block;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--c-texto) 10%, var(--c-cardapio-fundo));
+  }
+
+  .destaque__foto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: var(--foto-filtro);
+    transition: transform 0.8s var(--ease-out);
+  }
+
+  .destaque:hover .destaque__foto img {
+    transform: scale(1.05);
+  }
+
+  .destaque__tag {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 0.35rem 0.6rem;
+    border-radius: var(--raio-pill);
+    background: var(--c-acao);
+    color: var(--c-sobre-acao);
+  }
+
+  .destaque__linha {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.8rem;
+  }
+
+  .destaque__nome,
+  .destaque__preco {
+    font-family: var(--f-display);
+    font-size: clamp(1.05rem, 1.5vw, 1.3rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .destaque__preco {
+    flex: none;
+    margin-left: auto;
+  }
+
+  .destaque__preco {
+    text-align: right;
+  }
+
+  .destaque__preco small {
+    display: block;
+    line-height: 1.1;
+    font-family: var(--f-texto);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  /* Mesmo "+" da lista: o card também é pra pedir, não só pra olhar */
+  .destaque__mais {
+    flex: none;
+    align-self: center;
+    width: 30px;
+    height: 30px;
+  }
+
+  .destaque:hover .destaque__mais {
+    transform: scale(1.1);
+  }
+
+  .destaque__chamada {
+    margin-top: -0.4rem;
+    font-size: 0.92rem;
+    line-height: 1.4;
+  }
+
+  /* ---------- Categorias e itens ---------- */
+
+  .categoria {
+    padding-top: clamp(48px, 6vw, 80px);
+  }
+
+  .categoria__topo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 1.6rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .categoria__nome {
+    font-size: clamp(2.4rem, 4.6vw, 3.6rem);
+  }
+
+  .categoria__desc {
+    margin: 0;
+    max-width: 44ch;
+    font-size: 0.95rem;
+  }
+
+  .itens {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(24px, 4vw, 44px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Cardápio impresso como a comanda: linha picotada entre os itens */
+  .itens li {
+    border-top: 1px dashed var(--c-linha);
+  }
+
+  .item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    width: 100%;
+    min-height: 100%;
+    padding: 1.15rem 0.6rem 1.3rem;
+    border: 0;
+    background: none;
+    text-align: left;
+    transition: background-color 0.25s var(--ease-out);
+  }
+
+  .item:not([aria-disabled="true"]):hover {
+    background: color-mix(in srgb, var(--c-texto) 5%, transparent);
+  }
+
+  .item[aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  .item[aria-disabled="true"] .item__texto,
+  .item[aria-disabled="true"] .item__preco {
+    opacity: 0.72;
+  }
+
+  .item[aria-disabled="true"] .item__foto {
+    filter: grayscale(1);
+    opacity: 0.6;
+  }
+
+  .item__foto {
+    flex: none;
+    width: 72px;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--c-texto) 10%, var(--c-cardapio-fundo));
+  }
+
+  .item__foto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: var(--foto-filtro);
+  }
+
+  .item__texto {
+    flex: 1;
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  /* Nome e preço na mesma linha, preço encostado à direita */
+  .item__linha {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.8rem;
+  }
+
+  .item__nome {
+    flex: 0 1 auto;
+    min-width: 0;
+    font-family: var(--f-display);
+    font-size: 1.22rem;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .item__desc {
+    font-size: 0.92rem;
+    line-height: 1.45;
+    max-width: 40ch;
+    color: color-mix(in srgb, var(--c-texto) 85%, transparent);
+  }
+
+  .item__lado {
+    flex: none;
+    display: grid;
+    justify-items: end;
+    align-self: center;
+  }
+
+  .item__preco {
+    font-family: var(--f-display);
+    font-size: 1.22rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .item__preco {
+    flex: none;
+  }
+
+  .item__preco small {
+    font-family: var(--f-texto);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  .item__mais {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--c-acao);
+    color: var(--c-sobre-acao);
+    transition: transform 0.3s var(--ease-out);
+  }
+
+  .item__mais :global(svg) {
+    width: 18px;
+    height: 18px;
+  }
+
+  .item:not([aria-disabled="true"]):hover .item__mais {
+    transform: scale(1.1);
+  }
+
+  .item:not([aria-disabled="true"]):active .item__mais {
+    transform: scale(0.94);
+  }
+
+  :global(.item--avisado) .item__esgotado {
+    animation: esgotado-avisa 0.6s var(--ease-out);
+  }
+
+  @keyframes esgotado-avisa {
+    30% {
+      transform: scale(1.12);
+      background: var(--c-acao);
+      color: var(--c-sobre-acao);
+    }
+  }
+
+  .item__tag {
+    justify-self: start;
+    padding: 0.15em 0.45em;
+    border-radius: 3px;
+    background: var(--c-acao);
+    color: var(--c-sobre-acao);
+    font-size: 0.7rem;
+  }
+
+  .item__esgotado {
+    justify-self: start;
+    display: inline-block;
+    padding: 0.15em 0.45em;
+    border-radius: 3px;
+    font-size: 0.75rem;
+  }
+
+  @media (max-width: 900px) {
+    .itens {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 760px) {
+    .cardapio {
+      padding-top: 40px;
+    }
+    .cardapio__intro {
+      margin-bottom: 16px;
+    }
+    .cardapio__intro .titulo-secao {
+      font-size: clamp(2.4rem, 11vw, 3rem);
+    }
+    /* Esmaece a ponta direita enquanto houver categoria escondida */
+    .categorias__lista {
+      mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+    }
+    .categorias[data-fim="true"] .categorias__lista {
+      mask-image: none;
+    }
+    .destaques {
+      padding-inline: 0;
+    }
+    .destaques__lista {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline: var(--gutter);
+      padding-inline: var(--gutter);
+      scrollbar-width: none;
+    }
+    .destaques__lista::-webkit-scrollbar {
+      display: none;
+    }
+    /* Destaques compactos no celular: foto pequena ao lado, pra lista chegar logo */
+    .destaques__lista li {
+      flex: 0 0 82%;
+      scroll-snap-align: start;
+    }
+    .destaque {
+      grid-template-columns: 92px minmax(0, 1fr);
+      grid-template-rows: auto 1fr;
+      column-gap: 0.85rem;
+      row-gap: 0.3rem;
+      padding: 8px;
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--c-texto) 6%, transparent);
+    }
+    .destaque__foto {
+      grid-row: span 2;
+      aspect-ratio: 1;
+    }
+    .destaque__tag {
+      inset: auto 0 0 0;
+      padding: 0.2rem 0;
+      border-radius: 0;
+      font-size: 0.75rem;
+      letter-spacing: 0.02em;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .destaque__linha {
+      flex-direction: column;
+      gap: 0.1rem;
+      padding-top: 0.2rem;
+    }
+    .destaque__preco {
+      margin-left: 0;
+    }
+    /* Card compacto no celular: o card inteiro já é o toque */
+    .destaque__mais {
+      display: none;
+    }
+    .destaque__chamada {
+      margin-top: 0;
+      font-size: 0.85rem;
+      line-height: 1.35;
+    }
+    .item {
+      padding-inline: 0;
+    }
+    .item__foto {
+      width: 64px;
+    }
+    /* "a partir de" sobe pra cima do preço: nome e preço cabem na mesma linha em 320px */
+    .item__preco {
+      text-align: right;
+    }
+    .item__preco small {
+      display: block;
+      line-height: 1.1;
+    }
+  }
+</style>

@@ -1,0 +1,350 @@
+---
+import { loja, srcsetDe } from "../scripts/lib";
+
+const { sobre, diferencial, entrega, retirada } = loja;
+const taxas = entrega.bairros.map((b) => b.taxa).filter((t): t is number => typeof t === "number");
+const taxaMin = taxas.length ? Math.min(...taxas) : null;
+
+// Fatos práticos do pedido, puxados dos dados da loja (nada inventado aqui).
+const fatos = [
+  entrega.ativa && { valor: entrega.tempoMedio, legenda: "Tempo médio de entrega" },
+  entrega.ativa && taxaMin !== null && { valor: `R$\u00a0${taxaMin}`, legenda: "Entrega a partir de" },
+  retirada.ativa && { valor: "Grátis", legenda: `Retirada no balcão em ${retirada.tempoMedio}` },
+].filter(Boolean) as { valor: string; legenda: string }[];
+---
+
+<section class="sobre" id="sobre" aria-labelledby="sobre-titulo">
+  <div class="wrap sobre__topo">
+    <h2 class="display titulo-secao" id="sobre-titulo">{sobre.titulo}</h2>
+    <div class="sobre__lado">
+      <p class="subtitulo">{sobre.subtitulo}</p>
+      <p class="texto">{sobre.texto}</p>
+    </div>
+  </div>
+
+  <div class="vitrine" aria-label="Fotos da casa" data-vitrine>
+    <div class="vitrine__trilho">
+      {
+        [0, 1].map((copia) => (
+          <ul class="vitrine__grupo" aria-hidden={copia === 1 ? "true" : undefined}>
+            {sobre.vitrine.map((src, i) => (
+              <li class={`vitrine__foto vitrine__foto--${i % 3}`}>
+                <img src={src} srcset={srcsetDe(src)} sizes="(max-width: 760px) 70vw, 440px" alt="" loading="lazy" decoding="async" />
+              </li>
+            ))}
+          </ul>
+        ))
+      }
+    </div>
+  </div>
+  <div class="wrap vitrine__controle">
+    <button type="button" class="vitrine__pausa" data-vitrine-pausa aria-pressed="false">Pausar fotos</button>
+  </div>
+</section>
+
+<section class="diferencial sobre-escuro" aria-labelledby="dif-titulo">
+  <div class="wrap diferencial__grade">
+    <img src={diferencial.imagem} srcset={srcsetDe(diferencial.imagem)} sizes="(max-width: 900px) 100vw, 45vw" alt="" loading="lazy" class="diferencial__foto" />
+    <div class="diferencial__cartao">
+      <h2 class="diferencial__titulo" id="dif-titulo">{diferencial.titulo}</h2>
+      <p class="texto">{diferencial.texto}</p>
+      {
+        fatos.length > 0 && (
+          <dl class="fatos">
+            {fatos.map((f) => (
+              <div>
+                <dt>{f.legenda}</dt>
+                <dd>{f.valor}</dd>
+              </div>
+            ))}
+          </dl>
+        )
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+  const vitrine = document.querySelector<HTMLElement>("[data-vitrine]");
+
+  // Internet lenta: as fotos começam a baixar um pouco antes da vitrine aparecer
+  // e ela só anda depois que a primeira volta carregou (ou depois de 6s, no pior caso).
+  if (vitrine) {
+    vitrine.dataset.js = "";
+    vitrine.setAttribute("data-carregando", "");
+    const fotos = Array.from(vitrine.querySelectorAll<HTMLImageElement>(".vitrine__grupo:first-child img"));
+    const liberar = () => vitrine.removeAttribute("data-carregando");
+    const pronta = () => fotos.every((f) => f.complete);
+    fotos.forEach((f) => {
+      const marcar = () => f.closest("li")?.setAttribute("data-ok", "");
+      if (f.complete) marcar();
+      f.addEventListener("load", () => (marcar(), pronta() && liberar()), { once: true });
+      // Foto que não carrega sai da vitrine (senão fica um buraco invisível rodando)
+      f.addEventListener(
+        "error",
+        () => {
+          const src = f.getAttribute("src");
+          vitrine.querySelectorAll<HTMLImageElement>("img").forEach((i) => i.getAttribute("src") === src && i.closest("li")?.remove());
+          if (pronta()) liberar();
+        },
+        { once: true },
+      );
+    });
+    if (pronta()) liberar();
+    new IntersectionObserver(
+      ([en], obs) => {
+        if (!en.isIntersecting) return;
+        obs.disconnect();
+        vitrine.querySelectorAll("img").forEach((f) => (f.loading = "eager"));
+        setTimeout(liberar, 6000);
+      },
+      { rootMargin: "800px 0px" },
+    ).observe(vitrine);
+  }
+
+  const pausa = document.querySelector<HTMLButtonElement>("[data-vitrine-pausa]");
+  pausa?.addEventListener("click", () => {
+    const pausada = vitrine?.dataset.pausada !== "true";
+    if (vitrine) vitrine.dataset.pausada = String(pausada);
+    pausa.setAttribute("aria-pressed", String(pausada));
+    pausa.textContent = pausada ? "Continuar fotos" : "Pausar fotos";
+  });
+</script>
+
+<style>
+  .sobre {
+    --c-titulo: var(--c-sobre-titulo);
+    background: var(--c-sobre-fundo);
+    padding-block: clamp(72px, 10vw, 140px) clamp(56px, 7vw, 96px);
+  }
+
+  .sobre__topo {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 2rem 4rem;
+    align-items: start;
+  }
+
+  .sobre__lado {
+    display: grid;
+    gap: 1.4rem;
+    padding-top: 0.4rem;
+  }
+
+  /* ---------- Vitrine (fotos passando) ---------- */
+
+  .vitrine {
+    margin-top: clamp(48px, 7vw, 96px);
+    overflow: hidden;
+    mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent);
+  }
+
+  .vitrine__trilho {
+    display: flex;
+    width: max-content;
+    animation: vitrine-passa 70s linear infinite;
+  }
+
+  .vitrine:hover .vitrine__trilho,
+  .vitrine[data-carregando] .vitrine__trilho,
+  .vitrine[data-pausada="true"] .vitrine__trilho {
+    animation-play-state: paused;
+  }
+
+  .vitrine__controle {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+
+  .vitrine__pausa {
+    min-height: 44px;
+    padding: 0.4rem 0.2rem;
+    border: 0;
+    background: none;
+    color: var(--c-texto);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+
+  .vitrine__grupo {
+    display: flex;
+    align-items: center;
+    gap: clamp(10px, 1.4vw, 18px);
+    margin: 0;
+    padding: 0 clamp(5px, 0.7vw, 9px);
+    list-style: none;
+  }
+
+  .vitrine__foto {
+    flex: none;
+    height: clamp(240px, 30vw, 420px);
+    overflow: hidden;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--c-texto) 12%, var(--c-sobre-fundo));
+  }
+
+  .vitrine__foto--0 {
+    aspect-ratio: 4 / 5;
+  }
+
+  .vitrine__foto--1 {
+    aspect-ratio: 4 / 3;
+    height: clamp(190px, 23vw, 320px);
+  }
+
+  .vitrine__foto--2 {
+    aspect-ratio: 3 / 4;
+    height: clamp(210px, 26vw, 370px);
+  }
+
+  .vitrine__foto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.5s var(--ease-out);
+  }
+
+  /* Sem JS as fotos aparecem normal; com JS, cada uma entra quando terminou de baixar */
+  .vitrine[data-js] .vitrine__grupo:first-child .vitrine__foto:not([data-ok]) img {
+    opacity: 0;
+  }
+
+  @keyframes vitrine-passa {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vitrine {
+      overflow-x: auto;
+      mask-image: none;
+    }
+    .vitrine__trilho {
+      animation: none;
+    }
+    .vitrine__grupo[aria-hidden] {
+      display: none;
+    }
+    .vitrine__controle {
+      display: none;
+    }
+  }
+
+  /* ---------- Diferencial ---------- */
+
+  .diferencial {
+    background: var(--c-faixa-fundo);
+    padding-block: clamp(56px, 8vw, 96px);
+  }
+
+  .diferencial__grade {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    align-items: center;
+  }
+
+  .diferencial__foto {
+    width: 100%;
+    aspect-ratio: 5 / 6;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+
+  .diferencial__cartao {
+    position: relative;
+    margin-left: -10%;
+    padding: clamp(28px, 4vw, 52px);
+    background: var(--c-fundo);
+    color: var(--c-texto);
+    border-radius: 4px;
+    box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.45);
+  }
+
+  .diferencial__cartao::before {
+    content: "";
+    position: absolute;
+    inset: 12px;
+    border: 1px dashed var(--c-linha);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  /* Frase longa em peso médio: contraste de forma com os títulos condensados da página */
+  .diferencial__titulo {
+    max-width: 18ch;
+    margin: 0 0 1.4rem;
+    font-family: var(--f-display);
+    font-size: clamp(1.9rem, 3.2vw, 2.9rem);
+    font-weight: 600;
+    font-stretch: 100%;
+    font-variation-settings: "wdth" 100;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    color: var(--c-titulo);
+  }
+
+  .diferencial__cartao .texto {
+    max-width: 52ch;
+  }
+
+  .fatos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.4rem;
+    margin: 2rem 0 0;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--c-linha);
+  }
+
+  .fatos div {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 0.35rem;
+  }
+
+  .fatos dd {
+    margin: 0;
+    font-family: var(--f-display);
+    font-size: clamp(1.5rem, 2.4vw, 2rem);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .fatos dt {
+    font-size: 0.85rem;
+    line-height: 1.35;
+  }
+
+  @media (max-width: 900px) {
+    .sobre__topo {
+      grid-template-columns: 1fr;
+    }
+    .diferencial__grade {
+      grid-template-columns: 1fr;
+    }
+    .diferencial__cartao {
+      margin: -18% 4% 0;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .diferencial__cartao {
+      margin: -14% 0 0;
+    }
+    .fatos {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    .fatos div {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+  }
+</style>

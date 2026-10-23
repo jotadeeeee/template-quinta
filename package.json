@@ -1,0 +1,27 @@
+{
+  "name": "template-alimenticio",
+  "type": "module",
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "predev": "npm run imagens",
+    "dev": "astro dev",
+    "prebuild": "npm run imagens",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "imagens": "node scripts/otimizar-imagens.mjs"
+  },
+  "dependencies": {
+    "astro": "^7.3.1"
+  },
+  "allowScripts": {
+    "esbuild": true
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "^6.0.3"
+  }
+}
